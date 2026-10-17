@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.webgpu.min.mjs" } }
+</script>
 <style>
 :root{--bg:#0d1b2a;--panel:#14263a;--line:#27405b;--text:#e8eff7;--muted:#9bb0c6;--amber:#ffb347;--ink:#1a1204;
 --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
@@ -34,9 +37,10 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 button{font:inherit;font-weight:800;border:0;border-radius:12px;padding:14px 18px;cursor:pointer;width:100%}
 #go{background:var(--amber);color:var(--ink)}
 #go:disabled{opacity:.6;cursor:wait}
+#stop{margin-top:10px;background:var(--bg);color:var(--text);border:1px solid var(--line)}
 a.dl{display:none;margin-top:10px;text-align:center;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;text-decoration:none;font-weight:600}
 audio{width:100%;margin-top:14px;display:none}
-#status{min-height:22px;margin:12px 0 0;color:var(--muted);font-size:14px}
+#status{min-height:22px;margin:12px 0 0;color:var(--muted);font-size:14px;word-break:break-word}
 #bar{height:4px;background:var(--line);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
 #bar b{display:block;height:100%;width:0;background:var(--amber)}
 [hidden]{display:none!important}
@@ -63,14 +67,15 @@ footer{margin-top:40px;color:var(--muted);font-size:13px}
 
 <section class="card" aria-label="Pembuat suara">
   <label for="text">Teks</label>
-  <textarea id="text" maxlength="1000" placeholder="Tulis atau tempel teks di sini…">Halo, selamat datang di Edy VO. Ketik teks apa saja, pilih suara, lalu dengarkan hasilnya.</textarea>
-  <p class="cnt"><span id="n">0</span> / 1000 karakter</p>
+  <textarea id="text" placeholder="Tulis atau tempel naskah di sini. Naskah panjang dipecah dan digabung otomatis.">Halo, selamat datang di Edy VO. Ketik teks apa saja, pilih suara, lalu dengarkan hasilnya.</textarea>
+  <p class="cnt"><span id="n">0</span> karakter · <span id="np">0</span> bagian</p>
   <div class="row">
     <div>
       <label for="mode">Mode</label>
       <select id="mode">
         <option value="hq">Kualitas tinggi (Gemini)</option>
-        <option value="std">Standar (di browser, Inggris)</option>
+        <option value="sup">Standar+ (di browser, Indonesia &amp; Inggris)</option>
+        <option value="std">Standar (di browser, hanya Inggris)</option>
       </select>
     </div>
     <div>
@@ -88,16 +93,24 @@ footer{margin-top:40px;color:var(--muted);font-size:13px}
         <option value="tenang">Tenang</option>
       </select>
     </div>
+    <div id="langBox" hidden>
+      <label for="lang">Bahasa teks</label>
+      <select id="lang">
+        <option value="id">Indonesia</option>
+        <option value="en">English</option>
+      </select>
+    </div>
     <div id="speedBox" hidden>
       <label for="speed">Kecepatan <span id="sv">1.0x</span></label>
       <input id="speed" type="range" min="0.7" max="1.3" step="0.1" value="1">
     </div>
   </div>
   <button id="go">Buat suara</button>
+  <button id="stop" type="button" hidden>Batal</button>
   <div id="bar"><b></b></div>
   <p id="status" role="status"></p>
   <audio id="player" controls></audio>
-  <a class="dl" id="dl" download="edy-vo.wav">Unduh audio (.wav)</a>
+  <a class="dl" id="dl" download="edy-vo.mp3">Unduh audio (.mp3)</a>
   <details id="keybox">
     <summary>Pengaturan API key Gemini</summary>
     <p class="hint">Kunci disimpan hanya di browser ini dan dikirim ke server saat membuat suara. Ganti kapan saja kalau kredit habis.</p>
@@ -114,16 +127,20 @@ footer{margin-top:40px;color:var(--muted);font-size:13px}
 <h2>Cara kerjanya</h2>
 <ul>
   <li>Mode kualitas tinggi memakai API key Gemini milikmu sendiri, disimpan hanya di browser ini dan bisa diganti kapan saja.</li>
-  <li>Kalau jatah gratis habis, halaman otomatis pindah ke mode standar (Kokoro) yang berjalan di perangkatmu.</li>
-  <li>Mode standar paling bagus untuk teks bahasa Inggris dan mengunduh model sekitar 90 MB sekali saja.</li>
+  <li>Naskah panjang dipecah per bagian, dibuat satu per satu, lalu digabung jadi satu file MP3. Kalau limit per menit tercapai, halaman menunggu otomatis lalu melanjutkan.</li>
+  <li>Kalau jatah gratis habis, pilih mode Standar+ yang berjalan di perangkatmu. Mendukung bahasa Indonesia dan Inggris, mengunduh model sekitar 400 MB sekali saja. Kalau model sudah tersimpan, halaman beralih sendiri.</li>
+  <li>Mode Standar (Kokoro, sekitar 90 MB) hanya cocok untuk teks bahasa Inggris.</li>
 </ul>
-<footer>Edy VO. Gemini TTS dan Kokoro-82M.</footer>
+<footer>Edy VO. Gemini TTS, Supertonic 3 (lisensi OpenRAIL-M), dan Kokoro-82M. Suara dibuat dengan AI, beri label "dibuat dengan AI" pada konten yang kamu publikasikan.</footer>
 </main>
 
 <script type="module">
-import { KokoroTTS } from "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm";
-
 const $ = id => document.getElementById(id);
+const MAX_TOTAL = 30000;   // batas total karakter naskah
+const CHUNK_HQ = 900;      // server menerima maksimal 1000 karakter per permintaan
+const CHUNK_STD = 280;
+const LAME_URL = "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js";
+
 const VOICES = {
   hq: [
     ["Kore","Kore (wanita, tegas)","wanita"],["Zephyr","Zephyr (wanita, cerah)","wanita"],["Leda","Leda (wanita, muda)","wanita"],
@@ -138,8 +155,13 @@ const VOICES = {
     ["Sadachbia","Sadachbia (pria, lincah)","pria"],["Sadaltager","Sadaltager (pria, berpengetahuan)","pria"],
     ["Alnilam","Alnilam (pria, tegas)","pria"],["Rasalgethi","Rasalgethi (pria, informatif)","pria"]
   ],
+  sup: [
+    ["F1","Wanita 1","wanita"],["F2","Wanita 2","wanita"],["F3","Wanita 3","wanita"],["F4","Wanita 4","wanita"],["F5","Wanita 5","wanita"],
+    ["M1","Pria 1","pria"],["M2","Pria 2","pria"],["M3","Pria 3","pria"],["M4","Pria 4","pria"],["M5","Pria 5","pria"]
+  ],
   std: [["af_heart","Heart (wanita, AS)"],["af_bella","Bella (wanita, AS)"],["af_nicole","Nicole (wanita, AS)"],["bf_emma","Emma (wanita, Inggris)"],["am_michael","Michael (pria, AS)"],["am_fenrir","Fenrir (pria, AS)"],["bm_george","George (pria, Inggris)"]]
 };
+
 const wave = $("wave");
 for (let i = 0; i < 40; i++) {
   const b = document.createElement("i");
@@ -152,69 +174,134 @@ function fillVoices() {
   const m = $("mode").value;
   const opt = v => '<option value="' + v[0] + '">' + v[1] + "</option>";
   const L = VOICES[m];
-  $("voice").innerHTML = m === "hq"
-    ? ["wanita", "pria"].map(g => '<optgroup label="' + (g === "wanita" ? "Wanita" : "Pria") + '">' + L.filter(v => v[2] === g).map(opt).join("") + "</optgroup>").join("")
-    : L.map(opt).join("");
+  $("voice").innerHTML = m === "std"
+    ? L.map(opt).join("")
+    : ["wanita", "pria"].map(g => '<optgroup label="' + (g === "wanita" ? "Wanita" : "Pria") + '">' + L.filter(v => v[2] === g).map(opt).join("") + "</optgroup>").join("");
   $("styleBox").hidden = m !== "hq";
-  $("speedBox").hidden = m !== "std";
+  $("langBox").hidden = m !== "sup";
+  $("speedBox").hidden = m === "hq";
 }
 $("mode").addEventListener("change", fillVoices);
 fillVoices();
 $("speed").addEventListener("input", e => $("sv").textContent = Number(e.target.value).toFixed(1) + "x");
-$("text").addEventListener("input", () => $("n").textContent = $("text").value.length);
-$("n").textContent = $("text").value.length;
 
-/* ---------- Mode standar: Kokoro di browser ---------- */
-let tts = null;
-async function loadModel() {
-  if (tts) return tts;
-  $("bar").style.display = "block";
-  tts = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
-    dtype: "q8", device: "wasm",
-    progress_callback: p => {
-      if (p.status === "progress" && typeof p.progress === "number") {
-        $("bar").firstElementChild.style.width = p.progress + "%";
-        $("status").textContent = "Mengunduh model suara… " + Math.round(p.progress) + "% (hanya sekali)";
-      }
+/* ---------- Pemecah naskah ---------- */
+// Hasil: [{ t: teks, par: true bila bagian terakhir dari sebuah paragraf }]
+function pecah(text, max) {
+  const hasil = [];
+  for (const p of text.split(/\n+/).map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean)) {
+    const bagian = []; let buf = "";
+    for (const s of p.split(/(?<=[.!?])\s+/)) {
+      if (buf && buf.length + s.length + 1 > max) { bagian.push(buf); buf = s; }
+      else buf = buf ? buf + " " + s : s;
     }
-  });
-  $("bar").style.display = "none";
-  return tts;
-}
-function chunk(text) {
-  const parts = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/);
-  const out = []; let cur = "";
-  for (const s of parts) {
-    if ((cur + " " + s).length > 280 && cur) { out.push(cur); cur = s; }
-    else cur = cur ? cur + " " + s : s;
+    if (buf) bagian.push(buf);
+    const aman = [];
+    for (let t of bagian) {
+      while (t.length > max) {
+        let i = t.lastIndexOf(" ", max); if (i < max / 2) i = max;
+        aman.push(t.slice(0, i).trim()); t = t.slice(i).trim();
+      }
+      if (t) aman.push(t);
+    }
+    aman.forEach((t, i) => hasil.push({ t, par: i === aman.length - 1 }));
   }
-  if (cur) out.push(cur);
-  return out;
+  return hasil;
 }
-function toWav(samples, rate) {
-  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+function updateCount() {
+  const v = $("text").value;
+  $("n").textContent = v.length.toLocaleString("id-ID");
+  $("np").textContent = pecah(v, $("mode").value === "hq" ? CHUNK_HQ : CHUNK_STD).length;
+}
+$("text").addEventListener("input", updateCount);
+$("mode").addEventListener("change", updateCount);
+updateCount();
+
+/* ---------- Penggabung audio (PCM 16-bit mono) ---------- */
+class Gabung {
+  constructor() { this.bagian = []; this.rate = 24000; this.total = 0; }
+  pcm16(data, rate) { this.rate = rate; this.bagian.push(data); this.total += data.length; }
+  float(f32, rate) {
+    const d = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+      const x = Math.max(-1, Math.min(1, f32[i]));
+      d[i] = x < 0 ? x * 32768 : x * 32767;
+    }
+    this.pcm16(d, rate);
+  }
+  senyap(detik) {
+    const n = Math.round(detik * this.rate);
+    if (n > 0) { this.bagian.push(new Int16Array(n)); this.total += n; }
+  }
+  get detik() { return this.total / this.rate; }
+}
+
+// WAV dari server Gemini: header 44 byte, lalu PCM 16-bit mono
+function uraiWav(ab) {
+  const dv = new DataView(ab);
+  const rate = dv.getUint32(24, true) || 24000;
+  const len = (ab.byteLength - 44) & ~1;
+  return { data: new Int16Array(ab.slice(44, 44 + len)), rate };
+}
+
+function jadiWav(g) {
+  const buf = new ArrayBuffer(44 + g.total * 2), v = new DataView(buf);
   const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-  w(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  w(0, "RIFF"); v.setUint32(4, 36 + g.total * 2, true); w(8, "WAVE"); w(12, "fmt ");
   v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-  w(36, "data"); v.setUint32(40, samples.length * 2, true);
-  for (let i = 0; i < samples.length; i++) {
-    const x = Math.max(-1, Math.min(1, samples[i]));
-    v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
-  }
+  v.setUint32(24, g.rate, true); v.setUint32(28, g.rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, g.total * 2, true);
+  let o = 44;
+  for (const b of g.bagian) { new Int16Array(buf, o, b.length).set(b); o += b.length * 2; }
   return new Blob([buf], { type: "audio/wav" });
 }
-async function viaKokoro(text, voice, speed) {
-  const model = await loadModel();
-  const parts = chunk(text), clips = []; let total = 0, rate = 24000;
-  for (let i = 0; i < parts.length; i++) {
-    $("status").textContent = "Membuat suara… bagian " + (i + 1) + " dari " + parts.length;
-    const a = await model.generate(parts[i], { voice, speed });
-    clips.push(a.audio); total += a.audio.length; rate = a.sampling_rate;
+
+async function muatLame() {
+  if (window.lamejs && window.lamejs.Mp3Encoder) return true;
+  try {
+    await new Promise((ok, gagal) => {
+      const s = document.createElement("script");
+      s.src = LAME_URL; s.onload = ok; s.onerror = gagal;
+      document.head.appendChild(s);
+    });
+    return !!(window.lamejs && window.lamejs.Mp3Encoder);
+  } catch (e) { return false; }
+}
+
+async function keluaran(g) {
+  if (await muatLame()) {
+    try {
+      const enc = new window.lamejs.Mp3Encoder(1, g.rate, 128);
+      const out = [];
+      for (const b of g.bagian) {
+        for (let i = 0; i < b.length; i += 1152) {
+          const m = enc.encodeBuffer(b.subarray(i, i + 1152));
+          if (m.length) out.push(new Uint8Array(m));
+        }
+      }
+      const akhir = enc.flush();
+      if (akhir.length) out.push(new Uint8Array(akhir));
+      return { blob: new Blob(out, { type: "audio/mpeg" }), ext: "mp3", detik: g.detik };
+    } catch (e) { console.warn("Penyandi MP3 gagal, memakai WAV", e); }
   }
-  const all = new Float32Array(total); let o = 0;
-  for (const c of clips) { all.set(c, o); o += c.length; }
-  return toWav(all, rate);
+  return { blob: jadiWav(g), ext: "wav", detik: g.detik };
+}
+
+/* ---------- Status, bar, batal ---------- */
+let batal = false;
+function status(t) { $("status").textContent = t; }
+function bar(persen) {
+  $("bar").style.display = persen === null ? "none" : "block";
+  if (persen !== null) $("bar").firstElementChild.style.width = Math.max(0, Math.min(100, persen)) + "%";
+}
+const cekBatal = () => { if (batal) throw new Error("BATAL"); };
+async function tunggu(detik, pesan) {
+  for (let s = detik; s > 0; s--) {
+    cekBatal();
+    status(pesan.replace("{s}", s));
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  cekBatal();
 }
 
 /* ---------- Mode kualitas tinggi: Gemini lewat /api/tts ---------- */
@@ -234,62 +321,177 @@ $("delKey").addEventListener("click", () => { setKey(""); $("key").value = ""; k
 keyLabel();
 
 async function viaGemini(text, voice, style) {
-  const r = await fetch("/api/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-gemini-key": getKey() },
-    body: JSON.stringify({ text, voice, style })
-  });
-  if (!r.ok) {
-    let msg = "Gagal membuat suara";
-    try { msg = (await r.json()).error || msg; } catch (e) {}
-    const err = new Error(msg); err.status = r.status; throw err;
+  for (let coba = 0; coba < 4; coba++) {
+    cekBatal();
+    const r = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-gemini-key": getKey() },
+      body: JSON.stringify({ text, voice, style })
+    });
+    if (r.ok) return await r.blob();
+    let j = {};
+    try { j = await r.json(); } catch (e) {}
+    const err = new Error(j.error || "Gagal membuat suara");
+    err.status = r.status; err.code = j.code; err.retryAfter = j.retryAfter;
+    // limit per menit: tunggu lalu coba lagi. Limit harian: sebaiknya berhenti.
+    if (r.status === 429 && coba < 3 && err.retryAfter && err.retryAfter <= 90) {
+      await tunggu(err.retryAfter + 1, "Limit per menit tercapai, melanjutkan dalam {s} dtk…");
+      continue;
+    }
+    throw err;
   }
-  return await r.blob();
+}
+
+const gemCache = new Map(); // bagian Gemini yang sudah jadi, supaya bisa dilanjutkan bila gagal di tengah
+async function hqPanjang(text, voice, style) {
+  const bagian = pecah(text, CHUNK_HQ), g = new Gabung();
+  for (let i = 0; i < bagian.length; i++) {
+    cekBatal();
+    bar(i / bagian.length * 100);
+    status("Membuat suara kualitas tinggi… bagian " + (i + 1) + " dari " + bagian.length);
+    const k = [voice, style, bagian[i].t].join("|");
+    let u = gemCache.get(k);
+    if (!u) { u = uraiWav(await (await viaGemini(bagian[i].t, voice, style)).arrayBuffer()); gemCache.set(k, u); }
+    g.pcm16(u.data, u.rate);
+    if (i < bagian.length - 1) g.senyap(bagian[i].par ? 0.5 : 0.25);
+  }
+  bar(100);
+  return g;
+}
+
+/* ---------- Mode Standar+: Supertonic di browser (Indonesia & Inggris) ---------- */
+let supMod = null;
+async function getSup() { return supMod || (supMod = await import("./supertonic.js")); }
+async function supPanjang(text, lang, voice, speed, konfirmasi = true) {
+  const sup = await getSup();
+  if (konfirmasi && !(await sup.modelTersimpan())) {
+    if (!confirm("Mode ini mengunduh model suara sekitar 400 MB sekali saja dan menyimpannya di perangkat. Sebaiknya pakai Wi-Fi. Lanjut?")) throw new Error("BATAL");
+  }
+  await sup.siapkan(status, bar);
+  const bagian = pecah(text, CHUNK_STD), g = new Gabung();
+  for (let i = 0; i < bagian.length; i++) {
+    cekBatal();
+    const dasar = "Membuat suara… bagian " + (i + 1) + " dari " + bagian.length;
+    bar(i / bagian.length * 100);
+    const { samples, rate } = await sup.sintesis(bagian[i].t, lang, voice, speed, 8, (s, t) => {
+      cekBatal(); status(dasar + " (langkah " + s + "/" + t + ")");
+    });
+    g.float(samples, rate);
+    if (i < bagian.length - 1) g.senyap(bagian[i].par ? 0.45 : 0.2);
+  }
+  bar(100);
+  return g;
+}
+
+/* ---------- Mode Standar: Kokoro di browser (hanya Inggris) ---------- */
+let tts = null;
+async function loadKokoro() {
+  if (tts) return tts;
+  const { KokoroTTS } = await import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm");
+  tts = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
+    dtype: "q8", device: "wasm",
+    progress_callback: p => {
+      if (p.status === "progress" && typeof p.progress === "number") {
+        bar(p.progress);
+        status("Mengunduh model suara… " + Math.round(p.progress) + "% (hanya sekali)");
+      }
+    }
+  });
+  return tts;
+}
+async function kokoroPanjang(text, voice, speed) {
+  const model = await loadKokoro();
+  const bagian = pecah(text, CHUNK_STD), g = new Gabung();
+  for (let i = 0; i < bagian.length; i++) {
+    cekBatal();
+    bar(i / bagian.length * 100);
+    status("Membuat suara… bagian " + (i + 1) + " dari " + bagian.length);
+    const a = await model.generate(bagian[i].t, { voice, speed });
+    g.float(a.audio, a.sampling_rate);
+    if (i < bagian.length - 1) g.senyap(bagian[i].par ? 0.45 : 0.2);
+  }
+  bar(100);
+  return g;
+}
+
+/* ---------- Cadangan bila Gemini gagal ---------- */
+async function cadangan(e, text, lang, speed) {
+  const sup = await getSup().catch(() => null);
+  if (sup && await sup.modelTersimpan()) {
+    status(e.message + ". Beralih ke mode Standar+ (di browser)…");
+    const g = await supPanjang(text, lang, "F1", speed, false);
+    return { g, note: "Selesai dengan mode Standar+ karena: " + e.message + "." };
+  }
+  if (lang === "en") {
+    status(e.message + ". Beralih ke mode Standar (di browser, Inggris)…");
+    return { g: await kokoroPanjang(text, "af_heart", 1), note: "Selesai dengan mode Standar karena: " + e.message + "." };
+  }
+  // Teks Indonesia, model Standar+ belum diunduh: jangan pakai suara Inggris, minta pengguna memilih
+  $("mode").value = "sup"; fillVoices(); updateCount();
+  const err = new Error(e.message + ". Mode sudah diganti ke Standar+ (Indonesia & Inggris). Tekan Buat suara lagi untuk mengunduh model sekali (±400 MB).");
+  err.tampil = true;
+  throw err;
 }
 
 /* ---------- Tombol utama ---------- */
 const cache = new Map();
-function show(blob, note) {
-  const url = URL.createObjectURL(blob);
+function show(out, note) {
+  const url = URL.createObjectURL(out.blob);
   $("player").src = url; $("player").style.display = "block"; $("player").play().catch(() => {});
   $("dl").href = url; $("dl").style.display = "block";
-  $("status").textContent = note;
+  $("dl").download = "edy-vo." + out.ext;
+  $("dl").textContent = "Unduh audio (." + out.ext + ", " + (out.blob.size / 1048576).toFixed(2) + " MB)";
+  $("status").textContent = note + " Durasi " + Math.round(out.detik) + " dtk" + (out.ext === "wav" ? " (pustaka MP3 tidak termuat, hasil berupa WAV)." : ".");
 }
+function sibuk(b) {
+  $("go").disabled = b; $("stop").hidden = !b;
+  wave.classList.toggle("on", b);
+  if (!b) bar(null);
+}
+$("stop").addEventListener("click", () => { batal = true; status("Membatalkan…"); });
+
 $("go").addEventListener("click", async () => {
   const text = $("text").value.trim();
-  if (!text) { $("status").textContent = "Isi teks dulu, lalu tekan Buat suara."; return; }
-  const mode = $("mode").value, voice = $("voice").value, style = $("style").value, speed = Number($("speed").value);
-  const key = [mode, voice, style, speed, text].join("|");
-  if (cache.has(key)) { show(cache.get(key), "Selesai (dari cache, tidak memakai kuota)."); return; }
+  if (!text) { status("Isi teks dulu, lalu tekan Buat suara."); return; }
+  if (text.length > MAX_TOTAL) { status("Naskah terlalu panjang (maksimal " + MAX_TOTAL.toLocaleString("id-ID") + " karakter). Bagi jadi beberapa bagian."); return; }
+  const mode = $("mode").value, voice = $("voice").value, style = $("style").value;
+  const speed = Number($("speed").value), lang = $("lang").value;
+  const key = [mode, voice, style, speed, lang, text].join("|");
+  if (cache.has(key)) { const c = cache.get(key); show(c.out, "Selesai (dari cache, tidak memakai kuota)."); return; }
   if (mode === "hq" && !getKey()) {
     $("keybox").open = true;
-    $("status").textContent = "Isi API key Gemini dulu di Pengaturan di bawah (gratis dari Google AI Studio), atau pilih mode Standar.";
+    status("Isi API key Gemini dulu di Pengaturan di bawah (gratis dari Google AI Studio), atau pilih mode Standar+.");
     return;
   }
-  $("go").disabled = true; wave.classList.add("on");
+  batal = false; sibuk(true);
   try {
-    let blob, note = "Selesai. Putar atau unduh hasilnya.";
+    let g, note = "Selesai. Putar atau unduh hasilnya.";
     if (mode === "hq") {
       try {
-        $("status").textContent = "Membuat suara kualitas tinggi…";
-        blob = await viaGemini(text, voice, style);
+        g = await hqPanjang(text, voice, style);
       } catch (e) {
+        if (e.message === "BATAL") throw e;
         if (e.status === 401) { $("keybox").open = true; throw e; }
         if (e.status === 429) $("keybox").open = true;
-        $("status").textContent = e.message + ". Beralih ke mode standar (paling cocok untuk bahasa Inggris)…";
-        blob = await viaKokoro(text, "af_heart", 1);
-        note = "Selesai dengan mode standar karena: " + e.message + ".";
+        const c = await cadangan(e, text, lang, speed);
+        g = c.g; note = c.note;
       }
+    } else if (mode === "sup") {
+      g = await supPanjang(text, lang, voice, speed);
     } else {
-      blob = await viaKokoro(text, voice, speed);
+      g = await kokoroPanjang(text, voice, speed);
     }
-    cache.set(key, blob);
-    show(blob, note);
+    status("Menggabungkan audio…");
+    const out = await keluaran(g);
+    cache.set(key, { out });
+    show(out, note);
   } catch (err) {
     console.error(err);
-    $("status").textContent = err.status === 401 ? err.message + "." : "Gagal membuat suara. Muat ulang halaman dan coba teks yang lebih pendek.";
+    if (err.message === "BATAL") status("Dibatalkan.");
+    else if (err.status === 401 || err.tampil) status(err.message + (err.tampil ? "" : "."));
+    else status("Gagal membuat suara: " + (err.message || "kesalahan tidak dikenal") + ". Coba lagi, atau pilih mode lain.");
   } finally {
-    $("go").disabled = false; wave.classList.remove("on");
+    sibuk(false);
   }
 });
 </script>

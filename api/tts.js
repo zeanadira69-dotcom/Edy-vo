@@ -14,6 +14,7 @@ const STYLES = {
   tenang: "Say in a calm, soothing tone: "
 };
 const MAX_CHARS = 1000; // jaga hasil WAV di bawah batas respons 4,5 MB Vercel
+const RATE_PER_MENIT = 20; // naskah panjang dikirim per bagian, jadi lebih longgar dari sebelumnya
 const hits = new Map();
 
 function toWav(pcm, rate) {
@@ -25,6 +26,16 @@ function toWav(pcm, rate) {
   return Buffer.concat([h, pcm]);
 }
 
+// Ambil saran jeda dari respons error Gemini (RetryInfo.retryDelay, mis. "23s")
+function ambilRetryAfter(j) {
+  try {
+    const d = (j && j.error && j.error.details) || [];
+    const info = d.find(x => x && /RetryInfo/.test(x["@type"] || ""));
+    const detik = info && parseFloat(info.retryDelay);
+    return detik > 0 ? Math.ceil(detik) : null;
+  } catch (e) { return null; }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Gunakan metode POST" });
   const key = String(req.headers["x-gemini-key"] || process.env.GEMINI_API_KEY || "").trim();
@@ -33,7 +44,7 @@ module.exports = async (req, res) => {
   const ip = String(req.headers["x-forwarded-for"] || "x").split(",")[0].trim();
   const now = Date.now();
   const recent = (hits.get(ip) || []).filter(t => now - t < 60000);
-  if (recent.length >= 5) return res.status(429).json({ error: "Terlalu cepat, tunggu sebentar" });
+  if (recent.length >= RATE_PER_MENIT) return res.status(429).json({ error: "Terlalu cepat, tunggu sebentar", code: "RATE", retryAfter: 15 });
   recent.push(now); hits.set(ip, recent);
 
   const body = req.body || {};
@@ -57,8 +68,14 @@ module.exports = async (req, res) => {
           }
         })
       });
-      if (r.status === 429) return res.status(429).json({ error: "Kuota atau kredit API key ini habis. Ganti key di Pengaturan" });
-      const j = await r.json();
+      let j = {};
+      try { j = await r.json(); } catch (e) {}
+      if (r.status === 429) {
+        return res.status(429).json({
+          error: "Kuota atau limit API key ini habis. Tunggu sebentar atau ganti key di Pengaturan",
+          code: "QUOTA", retryAfter: ambilRetryAfter(j)
+        });
+      }
       if (!r.ok) {
         const em = (j.error && j.error.message) || "";
         if (r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(em))) {
