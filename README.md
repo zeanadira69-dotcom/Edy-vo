@@ -11,10 +11,17 @@ Teks jadi suara, gratis, tanpa akun.
 Naskah panjang dipecah otomatis per bagian, dibuat satu per satu, lalu digabung jadi satu file MP3 (WAV bila pustaka MP3 gagal dimuat).
 Jika Gemini gagal (limit/kuota), halaman beralih ke Standar+ bila modelnya sudah tersimpan.
 
+## Gabung video (`video.html`)
+
+Audio VO + klip video/gambar + naskah (opsional, untuk subtitle) digabung jadi satu video. Semua di browser, tanpa server dan tanpa API key.
+Klip dipakai berurutan dan diulang sampai menutup durasi audio. Subtitle dibagi menurut panjang karakter (perkiraan, bukan sinkron per kata). Hasil MP4 bila browser mendukung, kalau tidak WebM. File .srt juga bisa diunduh.
+Render berjalan real-time (lama proses = lama audio), jadi layar harus tetap menyala.
+
 ## Struktur
 
 ```
-index.html       halaman dan logika
+index.html       halaman dan logika VO
+video.html       gabung VO + klip + subtitle jadi video
 api/tts.js       fungsi serverless Vercel (proxy ke Gemini TTS)
 supertonic.js    pemuat model dan sintesis Supertonic 3
 helper.js        dari Supertonic (MIT), tidak diubah selain komentar

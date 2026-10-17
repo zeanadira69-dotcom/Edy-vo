@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1115">
+<title>Edy VO · Gabung Video</title>
+<style>
+  :root { --bg:#0f1115; --card:#181b21; --line:#2a2f38; --text:#eef0f3; --muted:#98a0ab; --accent:#f5b301; --ink:#1a1400; --danger:#ff6b6b; --ok:#5ad19a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:1.3rem; margin:4px 0 2px; } h1 span { color:var(--accent); }
+  .sub { color:var(--muted); font-size:.9rem; margin:0 0 16px; }
+  .sub a { color:var(--accent); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:0 0 6px; }
+  textarea, select, input[type=number] { width:100%; background:#0f1218; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:12px; font:inherit; }
+  textarea { min-height:150px; resize:vertical; }
+  input[type=file] { width:100%; color:var(--muted); font-size:.9rem; }
+  .grid { display:grid; gap:14px; } .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .info { color:var(--muted); font-size:.8rem; margin:6px 0 0; word-break:break-word; }
+  .chk { display:flex; gap:10px; align-items:center; font-size:.9rem; color:var(--text); margin:0; }
+  .chk input { width:20px; height:20px; accent-color:var(--accent); }
+  button { font:inherit; font-weight:600; border-radius:12px; border:1px solid var(--line); background:#232832; color:var(--text); padding:14px 16px; min-height:48px; cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--ink); border-color:var(--accent); flex:1; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:10px; }
+  .bar { height:8px; background:#232832; border-radius:99px; overflow:hidden; margin:12px 0 8px; }
+  .bar i { display:block; height:100%; width:0; background:var(--accent); }
+  .status { font-size:.9rem; color:var(--muted); min-height:1.4em; word-break:break-word; }
+  .status.err { color:var(--danger); } .status.ok { color:var(--ok); }
+  video#hasilV { width:100%; border-radius:10px; background:#000; }
+  canvas#layar { width:100%; border-radius:10px; background:#000; display:block; }
+  a.dl, a.dl2 { display:block; text-align:center; text-decoration:none; font-weight:700; padding:14px; border-radius:12px; margin-top:10px; }
+  a.dl { background:var(--accent); color:var(--ink); }
+  a.dl2 { background:#232832; color:var(--text); border:1px solid var(--line); }
+  [hidden] { display:none !important; }
+  .foot { color:var(--muted); font-size:.78rem; text-align:center; margin-top:18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Edy VO <span>· Gabung Video</span></h1>
+  <p class="sub">Audio VO + klip video/gambar + naskah jadi satu video siap unduh. Diproses di HP, tanpa server. Buat VO dulu di <a href="./">halaman Edy VO</a>.</p>
+
+  <div class="card grid">
+    <div>
+      <label for="fAudio">1. Audio VO (MP3/WAV)</label>
+      <input id="fAudio" type="file" accept="audio/*">
+      <p class="info" id="iAudio">Belum dipilih</p>
+    </div>
+    <div>
+      <label for="fKlip">2. Klip video / gambar (boleh banyak, dipakai berurutan dan diulang)</label>
+      <input id="fKlip" type="file" accept="video/*,image/*" multiple>
+      <p class="info" id="iKlip">Belum dipilih</p>
+    </div>
+    <div>
+      <label for="naskah">3. Naskah untuk subtitle (opsional)</label>
+      <textarea id="naskah" placeholder="Tempel naskah yang sama dengan VO. Subtitle dibagi sesuai panjang audio."></textarea>
+    </div>
+  </div>
+
+  <div class="card grid">
+    <div class="two">
+      <div>
+        <label for="rasio">Bentuk video</label>
+        <select id="rasio">
+          <option value="16:9">Lebar 16:9 (YouTube)</option>
+          <option value="9:16">Tegak 9:16 (Shorts/TikTok)</option>
+        </select>
+      </div>
+      <div>
+        <label for="ukuran">Resolusi</label>
+        <select id="ukuran">
+          <option value="720">720p (disarankan)</option>
+          <option value="480">480p (lebih ringan)</option>
+          <option value="1080">1080p (berat di HP)</option>
+        </select>
+      </div>
+    </div>
+    <div class="two">
+      <div>
+        <label for="maksKlip">Maks. detik per klip video</label>
+        <input id="maksKlip" type="number" min="2" max="60" step="1" value="8">
+      </div>
+      <div>
+        <label for="durGambar">Detik per gambar</label>
+        <input id="durGambar" type="number" min="2" max="30" step="1" value="5">
+      </div>
+    </div>
+    <label class="chk"><input id="cSub" type="checkbox" checked> Tampilkan subtitle di video</label>
+  </div>
+
+  <div class="row">
+    <button id="mulai" class="primary" disabled>Buat video</button>
+    <button id="batal" hidden>Batal</button>
+  </div>
+  <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
+  <div class="status" id="status"></div>
+  <canvas id="layar" hidden></canvas>
+
+  <div class="card" id="hasil" hidden style="margin-top:14px">
+    <video id="hasilV" controls playsinline></video>
+    <p class="info" id="iHasil"></p>
+    <a id="unduh" class="dl" download="video.mp4">Unduh video</a>
+    <a id="unduhSrt" class="dl2" download="subtitle.srt" hidden>Unduh subtitle (.srt)</a>
+  </div>
+
+  <p class="foot">Video dirender secara real-time: lama proses sama dengan lama audio. Biarkan layar menyala dan jangan pindah tab selama proses. Beri label "dibuat dengan AI" pada konten yang dipublikasikan.</p>
+</div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const el = { fAudio:$('fAudio'), fKlip:$('fKlip'), iAudio:$('iAudio'), iKlip:$('iKlip'), naskah:$('naskah'),
+  rasio:$('rasio'), ukuran:$('ukuran'), maksKlip:$('maksKlip'), durGambar:$('durGambar'), cSub:$('cSub'),
+  mulai:$('mulai'), batal:$('batal'), barWrap:$('barWrap'), bar:$('bar'), status:$('status'), layar:$('layar'),
+  hasil:$('hasil'), hasilV:$('hasilV'), iHasil:$('iHasil'), unduh:$('unduh'), unduhSrt:$('unduhSrt') };
+
+let berkasAudio = null, berkasKlip = [], batalFlag = false, sedangJalan = false, urlHasil = null, urlSrt = null;
+
+function status(t, jenis) { el.status.textContent = t || ''; el.status.className = 'status' + (jenis ? ' ' + jenis : ''); }
+function mnt(d) { d = Math.max(0, Math.round(d)); return Math.floor(d / 60) + ':' + String(d % 60).padStart(2, '0'); }
+function segarkan() { el.mulai.disabled = sedangJalan || !berkasAudio || !berkasKlip.length; }
+
+el.fAudio.addEventListener('change', () => {
+  berkasAudio = el.fAudio.files[0] || null;
+  el.iAudio.textContent = berkasAudio ? `${berkasAudio.name} · ${(berkasAudio.size / 1048576).toFixed(1)} MB` : 'Belum dipilih';
+  segarkan();
+});
+el.fKlip.addEventListener('change', () => {
+  berkasKlip = Array.from(el.fKlip.files || []);
+  el.iKlip.textContent = berkasKlip.length ? `${berkasKlip.length} berkas: ${berkasKlip.map(f => f.name).join(', ')}` : 'Belum dipilih';
+  segarkan();
+});
+
+// ---------- subtitle ----------
+// Bagi naskah menjadi potongan pendek (maks ±70 karakter), waktunya sebanding dengan jumlah karakter.
+function bagiNaskah(teks, durasi) {
+  const bersih = String(teks || '').replace(/\r/g, '').trim();
+  if (!bersih) return [];
+  const kalimat = bersih.split(/\n+|(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
+  const potong = [];
+  for (const k of kalimat) {
+    if (k.length <= 70) { potong.push(k); continue; }
+    let kini = '';
+    for (const kata of k.split(/\s+/)) {
+      if (kini && (kini + ' ' + kata).length > 70) { potong.push(kini); kini = kata; }
+      else kini = kini ? kini + ' ' + kata : kata;
+    }
+    if (kini) potong.push(kini);
+  }
+  const total = potong.reduce((a, s) => a + s.length, 0) || 1;
+  let t = 0;
+  return potong.map(s => {
+    const d = durasi * s.length / total;
+    const cue = { mulai: t, akhir: t + d, teks: s };
+    t += d;
+    return cue;
+  });
+}
+function waktuSrt(d) {
+  const ms = Math.round(d * 1000), h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000),
+    s = Math.floor(ms % 60000 / 1000), x = ms % 1000, p = (n, l = 2) => String(n).padStart(l, '0');
+  return `${p(h)}:${p(m)}:${p(s)},${p(x, 3)}`;
+}
+function jadiSrt(cues) {
+  return cues.map((c, i) => `${i + 1}\n${waktuSrt(c.mulai)} --> ${waktuSrt(c.akhir)}\n${c.teks}\n`).join('\n');
+}
+
+// ---------- media ----------
+function muatMeta(f) {
+  return new Promise((ok, gagal) => {
+    const url = URL.createObjectURL(f);
+    if ((f.type || '').startsWith('image/')) {
+      const im = new Image();
+      im.onload = () => ok({ jenis: 'gambar', url, dur: 0, w: im.naturalWidth, h: im.naturalHeight, im });
+      im.onerror = () => gagal(new Error('Gambar tidak bisa dibuka: ' + f.name));
+      im.src = url;
+    } else {
+      const v = document.createElement('video');
+      v.preload = 'metadata'; v.muted = true; v.playsInline = true;
+      const t = setTimeout(() => gagal(new Error('Klip terlalu lama dimuat: ' + f.name)), 20000);
+      v.onloadedmetadata = () => { clearTimeout(t); ok({ jenis: 'video', url, dur: isFinite(v.duration) ? v.duration : 0, w: v.videoWidth, h: v.videoHeight }); };
+      v.onerror = () => { clearTimeout(t); gagal(new Error('Format klip tidak didukung browser ini: ' + f.name)); };
+      v.src = url;
+    }
+  });
+}
+
+function pilihMime() {
+  const daftar = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  for (const m of daftar) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+  return '';
+}
+
+// Susun urutan klip sampai menutup seluruh durasi audio.
+function susunJalur(meta, durAudio, maksKlip, durGambar) {
+  const jalur = [];
+  let total = 0, i = 0;
+  while (total < durAudio - 0.01 && jalur.length < 2000) {
+    const m = meta[i % meta.length]; i++;
+    let d = m.jenis === 'gambar' ? durGambar : Math.min(m.dur || maksKlip, maksKlip);
+    if (d < 0.5) d = 0.5;
+    d = Math.min(d, durAudio - total);
+    jalur.push({ m, mulai: total, akhir: total + d });
+    total += d;
+  }
+  return jalur;
+}
+
+function gambarCover(c, sumber, sw, sh, W, H) {
+  if (!sw || !sh) return;
+  const skala = Math.max(W / sw, H / sh), dw = sw * skala, dh = sh * skala;
+  c.drawImage(sumber, (W - dw) / 2, (H - dh) / 2, dw, dh);
+}
+
+function gambarSubtitle(c, teks, W, H) {
+  const ukuran = Math.round(Math.min(W, H) * 0.058);
+  c.font = `700 ${ukuran}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  const maks = W * 0.88, baris = [];
+  let kini = '';
+  for (const kata of teks.split(/\s+/)) {
+    const coba = kini ? kini + ' ' + kata : kata;
+    if (kini && c.measureText(coba).width > maks) { baris.push(kini); kini = kata; } else kini = coba;
+  }
+  if (kini) baris.push(kini);
+  const tinggi = ukuran * 1.25, bawah = H - (H > W ? H * 0.2 : H * 0.07);
+  const y0 = bawah - (baris.length - 1) * tinggi;
+  c.lineJoin = 'round'; c.lineWidth = Math.max(4, ukuran * 0.16);
+  baris.forEach((b, i) => {
+    const y = y0 + i * tinggi;
+    c.strokeStyle = 'rgba(0,0,0,.9)'; c.strokeText(b, W / 2, y);
+    c.fillStyle = '#fff'; c.fillText(b, W / 2, y);
+  });
+}
+
+async function buatVideo() {
+  sedangJalan = true; batalFlag = false; segarkan();
+  el.hasil.hidden = true; el.batal.hidden = false; el.barWrap.hidden = false; el.bar.style.width = '0%';
+  if (urlHasil) { URL.revokeObjectURL(urlHasil); urlHasil = null; }
+  if (urlSrt) { URL.revokeObjectURL(urlSrt); urlSrt = null; }
+  let ctxAudio = null, perekam = null, kunciLayar = null, urlMeta = [];
+  try {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error('Browser ini belum mendukung perekaman video. Gunakan Chrome terbaru.');
+    }
+    const mime = pilihMime();
+    status('Membaca audio...');
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctxAudio = new AC();
+    try { await ctxAudio.resume(); } catch (e) {}
+    let buf;
+    try { buf = await ctxAudio.decodeAudioData(await berkasAudio.arrayBuffer()); }
+    catch (e) { throw new Error('Audio tidak bisa dibaca. Pakai MP3 atau WAV.'); }
+    const durAudio = buf.duration;
+
+    status('Membaca klip...');
+    const meta = [];
+    for (const f of berkasKlip) { const m = await muatMeta(f); meta.push(m); urlMeta.push(m.url); }
+
+    const tinggiPx = Number(el.ukuran.value);
+    const tegak = el.rasio.value === '9:16';
+    const sisiPendek = tinggiPx, sisiPanjang = Math.round(tinggiPx * 16 / 9 / 2) * 2;
+    const W = tegak ? sisiPendek : sisiPanjang, H = tegak ? sisiPanjang : sisiPendek;
+    el.layar.width = W; el.layar.height = H; el.layar.hidden = false;
+    const c = el.layar.getContext('2d', { alpha: false });
+
+    const maksKlip = Math.max(2, Number(el.maksKlip.value) || 8);
+    const durGambar = Math.max(2, Number(el.durGambar.value) || 5);
+    const jalur = susunJalur(meta, durAudio, maksKlip, durGambar);
+    const cues = el.cSub.checked ? bagiNaskah(el.naskah.value, durAudio) : [];
+    const cuesSrt = bagiNaskah(el.naskah.value, durAudio);
+
+    // dua elemen video bergantian agar klip berikutnya sempat dimuat
+    const pemutar = [document.createElement('video'), document.createElement('video')];
+    pemutar.forEach(v => { v.muted = true; v.playsInline = true; v.preload = 'auto'; });
+    const siapkan = (idx, slot) => {
+      const seg = jalur[idx];
+      if (!seg || seg.m.jenis !== 'video') return;
+      const v = pemutar[slot];
+      if (v.dataset.url !== seg.m.url) { v.src = seg.m.url; v.dataset.url = seg.m.url; }
+      try { v.currentTime = 0; } catch (e) {}
+    };
+
+    const aliran = el.layar.captureStream(30);
+    const tujuan = ctxAudio.createMediaStreamDestination();
+    const sumber = ctxAudio.createBufferSource();
+    sumber.buffer = buf; sumber.connect(tujuan);
+    tujuan.stream.getAudioTracks().forEach(t => aliran.addTrack(t));
+    const opsi = { videoBitsPerSecond: tinggiPx >= 1080 ? 8e6 : tinggiPx >= 720 ? 4e6 : 2e6, audioBitsPerSecond: 128000 };
+    if (mime) opsi.mimeType = mime;
+    perekam = new MediaRecorder(aliran, opsi);
+    const potongan = [];
+    perekam.ondataavailable = (e) => { if (e.data && e.data.size) potongan.push(e.data); };
+    const selesaiRekam = new Promise((ok) => { perekam.onstop = ok; });
+
+    try { if (navigator.wakeLock) kunciLayar = await navigator.wakeLock.request('screen'); } catch (e) {}
+
+    status('Merender... jangan pindah tab.');
+    siapkan(0, 0); siapkan(1, 1);
+    let idx = -1, slot = 0;
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+    perekam.start(1000);
+    const t0 = ctxAudio.currentTime + 0.15;
+    sumber.start(t0);
+
+    await new Promise((ok) => {
+      let selesai = false;
+      const akhir = () => { if (!selesai) { selesai = true; ok(); } };
+      sumber.onended = () => setTimeout(akhir, 300);
+      const bingkai = () => {
+        if (selesai) return;
+        if (batalFlag) { try { sumber.stop(); } catch (e) {} return akhir(); }
+        const t = Math.max(0, ctxAudio.currentTime - t0);
+        let n = idx < 0 ? 0 : idx;
+        while (n < jalur.length - 1 && t >= jalur[n].akhir) n++;
+        if (n !== idx) {
+          idx = n;
+          const seg = jalur[idx];
+          if (seg.m.jenis === 'video') {
+            slot = idx % 2;
+            const v = pemutar[slot];
+            if (v.dataset.url !== seg.m.url) siapkan(idx, slot);
+            try { v.currentTime = 0; } catch (e) {}
+            v.play().catch(() => {});
+          }
+          siapkan(idx + 1, (idx + 1) % 2);
+        }
+        const seg = jalur[idx];
+        c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+        if (seg.m.jenis === 'gambar') gambarCover(c, seg.m.im, seg.m.w, seg.m.h, W, H);
+        else { const v = pemutar[idx % 2]; if (v.readyState >= 2) gambarCover(c, v, v.videoWidth, v.videoHeight, W, H); }
+        const cue = cues.find(k => t >= k.mulai && t < k.akhir);
+        if (cue) gambarSubtitle(c, cue.teks, W, H);
+        el.bar.style.width = Math.min(100, t / durAudio * 100).toFixed(1) + '%';
+        status(`Merender ${mnt(t)} dari ${mnt(durAudio)}. Jangan pindah tab.`);
+        requestAnimationFrame(bingkai);
+      };
+      requestAnimationFrame(bingkai);
+    });
+
+    pemutar.forEach(v => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} });
+    if (perekam.state !== 'inactive') perekam.stop();
+    await selesaiRekam;
+    aliran.getTracks().forEach(t => t.stop());
+    if (batalFlag) { status('Dibatalkan.'); return; }
+    if (!potongan.length) throw new Error('Perekaman menghasilkan file kosong.');
+
+    const tipe = (perekam.mimeType || mime || 'video/webm').split(';')[0];
+    const ekstensi = tipe.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(potongan, { type: tipe });
+    urlHasil = URL.createObjectURL(blob);
+    el.hasilV.src = urlHasil;
+    el.unduh.href = urlHasil; el.unduh.download = `video-${Date.now()}.${ekstensi}`;
+    el.unduh.textContent = `Unduh video (${ekstensi.toUpperCase()}, ${(blob.size / 1048576).toFixed(1)} MB)`;
+    el.iHasil.textContent = `${W}x${H} · ${mnt(durAudio)} · ${jalur.length} klip` + (ekstensi === 'webm' ? ' · Browser ini menghasilkan WebM; tetap bisa diputar di HP dan diunggah ke YouTube.' : '');
+    if (cuesSrt.length) {
+      urlSrt = URL.createObjectURL(new Blob([jadiSrt(cuesSrt)], { type: 'text/plain' }));
+      el.unduhSrt.href = urlSrt; el.unduhSrt.hidden = false;
+    } else el.unduhSrt.hidden = true;
+    el.hasil.hidden = false;
+    el.bar.style.width = '100%';
+    status('Selesai.', 'ok');
+  } catch (e) {
+    console.error(e);
+    status(e && e.message ? e.message : 'Gagal membuat video.', 'err');
+  } finally {
+    try { if (kunciLayar) await kunciLayar.release(); } catch (e) {}
+    try { if (perekam && perekam.state !== 'inactive') perekam.stop(); } catch (e) {}
+    try { if (ctxAudio) await ctxAudio.close(); } catch (e) {}
+    urlMeta.forEach(u => URL.revokeObjectURL(u));
+    el.batal.hidden = true; sedangJalan = false; segarkan();
+  }
+}
+
+el.mulai.addEventListener('click', buatVideo);
+el.batal.addEventListener('click', () => { batalFlag = true; });
+window.__uji = { bagiNaskah, jadiSrt, susunJalur };
+</script>
+</body>
+</html>
