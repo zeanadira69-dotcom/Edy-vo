@@ -45,6 +45,13 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <button id="pecah">Pecah jadi adegan</button>
 </section>
 
+<section class="card">
+<label for="kode">Kode visual (opsional)</label>
+<textarea id="kode" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Tempel kode visual di sini. Format: baris ### 1, lalu kode adegan 1, baris ### 2, lalu kode adegan 2, dan seterusnya." style="min-height:130px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace"></textarea>
+<p class="hint" id="kinfo">Kosong. Halaman memakai mode otomatis.</p>
+<button class="s" id="kclear" type="button" style="margin-top:8px">Kosongkan kode</button>
+</section>
+
 <section id="studio" hidden>
 <div class="card">
 <div class="row">
@@ -314,6 +321,14 @@ onmessage=function(e){const m=e.data;
 if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d");DD=DLIB(g)}
 else if(m.k==="code"){try{if(m.mode==="d"){F[m.i]=(new Function("return ("+m.src+")"))();MD[m.i]=1}else{F[m.i]=new Function("g","t","W","H","P","K","D",m.code);MD[m.i]=0}postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
 else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();if(MD[m.i]){g.scale(m.w/360,m.h/640);F[m.i](DD,m.t,m.d||5)}else F[m.i](g,m.t,m.w,m.h,P,K,m.d||5);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
+function parseKode(){
+  const o={},sp=$("kode").value.split(/^\s*###\s*(\d+)\s*$/m);
+  for(let i=1;i<sp.length;i+=2){const c=(sp[i+1]||"").replace(/```(?:js|javascript)?/g,"").trim();if(c&&c.length<20000)o[+sp[i]-1]=c}
+  return o;
+}
+function infoKode(){const n=Object.keys(parseKode()).length;$("kinfo").textContent=n?n+" bagian kode terbaca. Dipakai saat Buat video.":"Kosong. Halaman memakai mode otomatis."}
+$("kode").addEventListener("input",infoKode);
+$("kclear").onclick=()=>{$("kode").value="";infoKode()};
 const ckey=s=>[s.narasi.trim(),s.jenis,s.layar,s.jenis==="angka"?s.extra:""].join("|");
 const spay=(i,s,u)=>({i,narasi:s.narasi.trim(),layar:s.layar,j:s.jenis,x:s.extra,g:s.grp,k:s.gi,d:Math.round((s.dur||5)*10)/10,ulang:u?1:0,m:s.jenis==="diagram"?"d":"c"});
 let wk=null,pend=0;
@@ -411,6 +426,8 @@ $("buat").onclick=async()=>{
     let buf=null,total=n/14+.8;
     if(!bisu){st("Membuat suara…");buf=await ac.decodeAudioData(await suara());total=buf.duration+.8}
     siap(total);
+    const man=parseKode();
+    S.forEach((s,i)=>{if(man[i]){s.code=man[i];s.cn=ckey(s);s.man=true}else if(s.man){s.code="";s.cn="";s.man=false}});
     if($("aiv").checked&&getKey()){
       const need=S.map((s,i)=>({i,s})).filter(x=>(AIJ.includes(x.s.jenis)||(x.s.jenis==="diagram"&&!x.s.preset))&&(!x.s.code||x.s.cn!==ckey(x.s)));
       if(need.length){
