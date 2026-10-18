@@ -40,7 +40,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 
 <section class="card">
 <label for="naskah">Naskah</label>
-<textarea id="naskah">isi naskah konten kalian disini, jangan lupa kasih tanda baca yang sesuai serta dikasih paragraf ya.</textarea>
+<textarea id="naskah">isi naskah konten kalian disini bosku 😎</textarea>
 <p class="hint"><span id="cnt">0</span> / 1.000 karakter</p>
 <button id="pecah">Pecah jadi adegan</button>
 </section>
@@ -57,7 +57,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <select id="style"><option value="normal">Normal</option><option value="hangat">Hangat</option><option value="semangat">Semangat</option><option value="tenang">Tenang</option></select></div>
 </div>
 <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="bisu">Pratinjau tanpa suara (tanpa API key)</label>
-<p class="hint">API key Gemini diisi di halaman utama (Pengaturan API key), dan dipakai juga di sini.</p>
+<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="aiv" checked>Visual buatan AI (Gemini)</label><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="subon">Tampilkan subtitle</label><p class="hint">API key Gemini diisi di halaman utama (Pengaturan API key), dan dipakai juga di sini.</p>
 </div>
 
 <div id="sc"></div>
@@ -82,6 +82,9 @@ const clip=(s,n)=>{s=s.replace(/\s+/g," ").trim();if(s.length<=n)return s;const 
 const PRE=/^(satu|dua|tiga|empat|lima|enam|pertama|kedua|ketiga|keempat|kelima|\d+[.)])[\s,.:]+/i;
 const st=t=>$("status").textContent=t;
 const JN={judul:"Judul bergerak",angka:"Angka besar",poin:"Daftar poin",penutup:"Penutup"};
+const IKL={octopus:"Gurita",heart:"Jantung",drop:"Tetes air",bolt:"Petir",clock:"Jam",globe:"Bumi",bulb:"Lampu",star:"Bintang"};
+const IKN=[["octopus",/gurita|cumi|tentakel/],["heart",/jantung|hati|cinta|sehat/],["drop",/darah|air|hujan|laut|tetes/],["bolt",/listrik|energi|cepat|kilat|daya|charger/],["clock",/waktu|jam|menit|detik|tahun|durasi/],["globe",/dunia|bumi|global|negara|planet|internet/],["bulb",/ide|lampu|pintar|otak|belajar|tahu/]];
+const ikon=p=>{const q=p.toLowerCase();for(const [k,r] of IKN)if(r.test(q))return k;return "star"};
 
 function pecah(text){
   let p=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
@@ -98,11 +101,11 @@ function bikin(p,i,n){
   if(n>1&&i===n-1){jenis="penutup";extra="Simpan videonya";layar=clip(p.split(/[,.!?]/)[0],30)}
   else if(PRE.test(p)){jenis="poin";layar=cap(clip(p.replace(PRE,"").split(/[,.;]| dan /)[0],26))}
   else if(m&&i>0){jenis="angka";extra=m[0].trim();layar=clip(p.replace(m[0],""),40)}
-  return{narasi:p,jenis,layar,extra};
+  return{narasi:p,jenis,layar,extra,ikon:ikon(p),img:null};
 }
 function hitung(){const n=S.length?S.reduce((a,s)=>a+s.narasi.trim().length,0)+S.length-1:$("naskah").value.length;$("cnt").textContent=n.toLocaleString("id-ID")}
 function tampil(){
-  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}">${s.jenis==="angka"||s.jenis==="penutup"?`<label>${s.jenis==="angka"?"Angka (mis. 40%)":"Teks tombol"}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
+  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><div class="row"><div><label>Gambar</label><select data-f="ikon">${Object.keys(IKL).map(k=>`<option value="${k}"${k===s.ikon?" selected":""}>${IKL[k]}</option>`).join("")}</select></div><div><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img></div></div>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>${s.jenis==="angka"||s.jenis==="penutup"?`<label>${s.jenis==="angka"?"Angka (mis. 40%)":"Teks tombol"}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
   hitung();
 }
 $("naskah").addEventListener("input",()=>{if(!S.length)hitung()});
@@ -114,8 +117,15 @@ $("pecah").onclick=()=>{
 };
 $("tambah").onclick=()=>{S.push({narasi:"",jenis:"judul",layar:"",extra:""});tampil()};
 $("sc").addEventListener("input",e=>{const c=e.target.closest("[data-i]"),f=e.target.dataset.f;if(!c||!f)return;S[+c.dataset.i][f]=e.target.value;hitung()});
-$("sc").addEventListener("change",e=>{if(e.target.dataset.f==="jenis")tampil()});
-$("sc").addEventListener("click",e=>{if(e.target.dataset.del!==undefined){S.splice(+e.target.closest("[data-i]").dataset.i,1);tampil()}});
+$("sc").addEventListener("change",e=>{const d=e.target.dataset;if(d.f==="jenis")tampil();if(d.img!==undefined&&e.target.files[0]){const i=+e.target.closest("[data-i]").dataset.i,im=new Image();im.onload=()=>{S[i].img=im;tampil()};im.src=URL.createObjectURL(e.target.files[0])}});
+$("sc").addEventListener("click",e=>{const d=e.target.dataset;if(d.del!==undefined){S.splice(+e.target.closest("[data-i]").dataset.i,1);tampil()}if(d.noimg!==undefined){e.preventDefault();S[+e.target.closest("[data-i]").dataset.i].img=null;tampil()}
+  if(d.regen!==undefined){
+    const i=+e.target.closest("[data-i]").dataset.i,s=S[i],b=e.target;
+    if(!getKey()){st("Isi API key Gemini di halaman utama dulu.");return}
+    b.disabled=true;st("Membuat ulang visual…");
+    genKode([{i,narasi:s.narasi.trim(),layar:s.layar,ulang:1}]).then(c=>{s.code=c[i]||"";s.cn=s.narasi.trim();st(s.code?"Visual adegan "+(i+1)+" diperbarui. Akan muncul di video berikutnya.":"Tidak ada kode yang valid, coba lagi.")}).catch(er=>st("Gagal: "+er.message)).finally(()=>{b.disabled=false});
+  }
+});
 hitung();
 
 const cv=$("cv"),g=cv.getContext("2d");cv.width=W;cv.height=H;
@@ -144,15 +154,15 @@ function kata(tx,size,wt,yc,t,align,acc){
   g.globalAlpha=A;return top+o.L.length*o.lh;
 }
 const T={
-  judul(s,t){const b=kata(s.layar||"…",96,800,H*.4,t,"l",true);g.fillStyle=AM;g.fillRect(60,b+24,360*ease((t-.7)/.6),8)},
+  judul(s,t){const b=kata(s.layar||"…",96,800,H*.66,t,"l",true);g.fillStyle=AM;g.fillRect(60,b+24,360*ease((t-.7)/.6),8)},
   angka(s,t){
     let txt=s.extra||"XX";const m=txt.match(/^([^\d]*)([\d.,]+)(.*)$/);
     if(m){const v=parseFloat(m[2].replace(",","."));if(isFinite(v)){const d=(m[2].match(/[.,](\d{1,2})$/)||[,""])[1].length;txt=m[1]+(v*ease(t/1.4)).toFixed(d).replace(".",",")+m[3]}}
-    g.font=`800 190px ${F}`;g.fillStyle=AM;g.textAlign="center";g.fillText(txt,W/2,H*.42);g.textAlign="left";
-    kata(s.layar||"",48,600,H*.42+130,t-.4,"c",false);
+    g.font=`800 190px ${F}`;g.fillStyle=AM;g.textAlign="center";g.fillText(txt,W/2,H*.6);g.textAlign="left";
+    kata(s.layar||"",48,600,H*.6+130,t-.4,"c",false);
   },
   poin(s,t){
-    const it=s.grp,rh=130,gp=22,tot=it.length*(rh+gp)-gp,y0=H*.42-tot/2;
+    const it=s.grp,rh=130,gp=22,tot=it.length*(rh+gp)-gp,y0=H*.66-tot/2;
     it.forEach((x,k)=>{
       const p=ease((t-.05-k*.1)/.4),y=y0+k*(rh+gp),on=k===s.gi,dx=(1-p)*-80;
       g.globalAlpha=A*p;g.fillStyle=on?AM:"#1c2f44";rr(60+dx,y,W-120,rh,22);
@@ -164,7 +174,7 @@ const T={
     g.globalAlpha=A;
   },
   penutup(s,t){
-    const b=kata(s.layar||"Terima kasih",92,800,H*.36,t,"c",true),p=ease((t-.9)/.5),sc=1+.03*Math.sin(t*5),bw=460*sc,bh=110*sc;
+    const b=kata(s.layar||"Terima kasih",92,800,H*.62,t,"c",true),p=ease((t-.9)/.5),sc=1+.03*Math.sin(t*5),bw=460*sc,bh=110*sc;
     g.globalAlpha=A*p;g.fillStyle=AM;rr((W-bw)/2,b+50,bw,bh,28);
     g.fillStyle="#1a1204";g.font=`800 42px ${F}`;g.textAlign="center";g.fillText(s.extra||"Ikuti kami",W/2,b+50+bh/2+15);
     g.fillStyle=MU;g.font=`400 30px ${F}`;g.fillText("Dibuat dengan AI",W/2,b+50+bh+70);
@@ -178,8 +188,74 @@ function sub(s,t){
   for(;k<c.length-1;k++){acc+=c[k].length;if(u<acc)break}
   g.font=`600 38px ${F}`;g.textAlign="center";
   const w=g.measureText(c[k]).width+44;
-  g.fillStyle="rgba(0,0,0,.6)";rr((W-w)/2,H-300,w,76,18);
-  g.fillStyle=TX;g.fillText(c[k],W/2,H-300+51);g.textAlign="left";
+  g.fillStyle="rgba(0,0,0,.6)";rr((W-w)/2,H-170,w,76,18);
+  g.fillStyle=TX;g.fillText(c[k],W/2,H-170+51);g.textAlign="left";
+}
+const IK={
+heart(){g.fillStyle="#ff6b81";g.beginPath();g.moveTo(0,.8);g.bezierCurveTo(-1.3,-.1,-.7,-1,0,-.4);g.bezierCurveTo(.7,-1,1.3,-.1,0,.8);g.fill()},
+drop(){g.fillStyle="#4cc9f0";g.beginPath();g.moveTo(0,-1);g.bezierCurveTo(.2,-.5,.75,0,.75,.45);g.arc(0,.45,.75,0,Math.PI);g.bezierCurveTo(-.75,0,-.2,-.5,0,-1);g.fill()},
+bulb(){g.fillStyle="#ffd166";g.beginPath();g.arc(0,-.2,.7,0,7);g.fill();g.fillStyle="#9bb0c6";g.fillRect(-.3,.45,.6,.2);g.fillRect(-.22,.7,.44,.15)},
+bolt(){g.fillStyle="#ffd166";g.beginPath();g.moveTo(.25,-1);g.lineTo(-.55,.15);g.lineTo(-.05,.15);g.lineTo(-.25,1);g.lineTo(.6,-.2);g.lineTo(.1,-.2);g.closePath();g.fill()},
+star(){g.fillStyle="#ffd166";g.beginPath();for(let i=0;i<10;i++){const r=i%2?.45:1,a=-Math.PI/2+i*Math.PI/5;g.lineTo(Math.cos(a)*r,Math.sin(a)*r)}g.closePath();g.fill()},
+clock(t){g.fillStyle="#e8eff7";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.strokeStyle="#0d1b2a";g.lineWidth=.1;g.lineCap="round";g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(t*2)*.55,Math.sin(t*2)*.55);g.moveTo(0,0);g.lineTo(0,-.72);g.stroke()},
+globe(t){g.fillStyle="#2a9d8f";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.strokeStyle="#bff0e6";g.lineWidth=.06;g.beginPath();g.arc(0,0,.9,0,7);g.moveTo(-.9,0);g.lineTo(.9,0);g.moveTo(Math.abs(Math.cos(t))*.9,0);g.ellipse(0,0,Math.abs(Math.cos(t))*.9,.9,0,0,7);g.stroke()},
+octopus(t){g.fillStyle="#f78ca2";g.beginPath();g.arc(0,-.25,.7,Math.PI,0);g.lineTo(.7,.1);g.lineTo(-.7,.1);g.fill();g.strokeStyle="#f78ca2";g.lineWidth=.16;g.lineCap="round";for(let i=0;i<5;i++){const x=-.55+i*.275;g.beginPath();g.moveTo(x,.05);g.quadraticCurveTo(x+Math.sin(t*3+i)*.2,.5,x+Math.sin(t*3+i+1)*.25,.95);g.stroke()}g.fillStyle="#fff";g.beginPath();g.arc(-.25,-.3,.15,0,7);g.arc(.25,-.3,.15,0,7);g.fill();g.fillStyle="#0d1b2a";g.beginPath();g.arc(-.25,-.3,.07,0,7);g.arc(.25,-.3,.07,0,7);g.fill()}
+};
+const WSRC=`let cv,g,F={};self.fetch=self.XMLHttpRequest=self.WebSocket=self.EventSource=undefined;
+const P={am:"#ffb347",bl:"#4cc9f0",tx:"#e8eff7",pk:"#f78ca2",gr:"#2a9d8f"};
+onmessage=function(e){const m=e.data;
+if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d")}
+else if(m.k==="code"){try{F[m.i]=new Function("g","t","W","H","P",m.code);postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
+else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();g.beginPath();g.rect(0,40,m.w,560);g.clip();F[m.i](g,m.t,m.w,m.h,P);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
+let wk=null,pend=0;
+async function genKode(list){
+  const r=await fetch("/api/gen",{method:"POST",headers:{"Content-Type":"application/json","x-gemini-key":getKey()},body:JSON.stringify({scenes:list})});
+  if(!r.ok){let m="Gagal membuat visual";try{m=(await r.json()).error||m}catch(e){}throw new Error(m)}
+  return (await r.json()).codes;
+}
+function kirimKode(){
+  return new Promise(res=>{
+    S.forEach(s=>{s.ai="";s.bmp=null});pend=0;
+    const tot=S.filter(s=>s.code).length;let n=0;
+    wk=new Worker(URL.createObjectURL(new Blob([WSRC],{type:"text/javascript"})));
+    wk.onmessage=e=>{
+      const m=e.data,s=S[m.i];
+      if(m.k==="ok"||m.k==="err"){if(s)s.ai=m.k==="ok"?"ok":"bad";if(++n>=tot)res()}
+      else if(m.k==="f"){pend=0;if(s){if(s.bmp)s.bmp.close();s.bmp=m.bmp}else m.bmp.close()}
+      else if(m.k==="fe"){pend=0;if(s)s.ai="bad"}
+    };
+    wk.onerror=()=>res();
+    wk.postMessage({k:"init",w:W,h:H});
+    S.forEach((s,i)=>{if(s.code)wk.postMessage({k:"code",i,code:s.code})});
+    if(!tot)res();
+    setTimeout(res,3000);
+  });
+}
+function aiHero(s,t){
+  if(wk){
+    const n=performance.now();
+    if(!pend){pend=n;wk.postMessage({k:"draw",i:S.indexOf(s),t,w:W,h:H})}
+    else if(n-pend>1500){S.forEach(x=>{if(x.ai==="ok")x.ai="bad"});wk.terminate();wk=null}
+  }
+  g.globalAlpha=A;
+  if(s.bmp)g.drawImage(s.bmp,0,0);
+}
+function hero(s,t){
+  if(s.ai==="ok"&&!s.img){aiHero(s,t);return}
+  const cx=W/2,cy=320,p=ease(t/.6);
+  g.save();
+  for(let i=0;i<3;i++){const u=(t*.35+i/3)%1;g.globalAlpha=A*(1-u)*.35;g.strokeStyle=AM;g.lineWidth=4;g.beginPath();g.arc(cx,cy,120+u*190,0,7);g.stroke()}
+  for(let i=0;i<6;i++){const a=t*(.5+i*.07)+i*1.05,r=230+(i%2)*40;g.globalAlpha=A*.8;g.fillStyle=i%2?"#4cc9f0":AM;g.beginPath();g.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r*.8,8+i%3*3,0,7);g.fill()}
+  g.globalAlpha=A*p;
+  if(s.img){
+    const w=600,h=460,x=60,y=90,iw=s.img.width,ih=s.img.height,r=Math.max(w/iw,h/ih)*(1+.12*t/Math.max(s.dur,1));
+    g.beginPath();g.roundRect(x,y,w,h,28);g.clip();
+    g.drawImage(s.img,x+w/2-iw*r/2,y+h/2-ih*r/2,iw*r,ih*r);
+  }else{
+    const k=IK[s.ikon]||IK.star,sc=(1+.04*Math.sin(t*3))*(.6+.4*p);
+    g.translate(cx,cy+Math.sin(t*2)*10);g.scale(150*sc,150*sc);k(t);
+  }
+  g.restore();g.globalAlpha=A;
 }
 function frame(Tm){
   let k=0;while(k<S.length-1&&Tm>=S[k].t1)k++;
@@ -188,8 +264,8 @@ function frame(Tm){
   const gl=g.createRadialGradient(W/2+Math.sin(Tm*.5)*140,H*.3,20,W/2,H*.3,560);
   gl.addColorStop(0,"rgba(255,179,71,.14)");gl.addColorStop(1,"rgba(255,179,71,0)");
   g.fillStyle=gl;g.fillRect(0,0,W,H);
-  A=ease(t/.35);g.globalAlpha=A;T[s.jenis](s,t);
-  A=1;g.globalAlpha=1;sub(s,t);
+  A=ease(t/.35);g.globalAlpha=A;hero(s,t);T[s.jenis](s,t);
+  A=1;g.globalAlpha=1;if($("subon").checked)sub(s,t);
   g.fillStyle=AM;g.fillRect(0,0,W*Tm/TOT,8);
 }
 function siap(total){
@@ -224,6 +300,17 @@ $("buat").onclick=async()=>{
     const ac=new(window.AudioContext||window.webkitAudioContext)();await ac.resume();
     let buf=null,total=n/14+.8;
     if(!bisu){st("Membuat suara…");buf=await ac.decodeAudioData(await suara());total=buf.duration+.8}
+    if($("aiv").checked&&getKey()){
+      const need=S.map((s,i)=>({i,s})).filter(x=>!x.s.code||x.s.cn!==x.s.narasi.trim());
+      if(need.length){
+        st("Membuat visual dengan AI…");
+        try{
+          const c=await genKode(need.map(x=>({i:x.i,narasi:x.s.narasi.trim(),layar:x.s.layar})));
+          need.forEach(x=>{if(c[x.i]){x.s.code=c[x.i];x.s.cn=x.s.narasi.trim()}});
+        }catch(e){st("Visual AI gagal ("+e.message+"). Memakai gambar bawaan.");await new Promise(r=>setTimeout(r,1500))}
+      }
+      await kirimKode();
+    }else S.forEach(s=>{s.ai=""});
     await document.fonts.load(`800 40px ${F}`);
     siap(total);cv.hidden=false;$("hasil").hidden=true;
     try{wl=await navigator.wakeLock.request("screen")}catch(e){}
@@ -256,7 +343,7 @@ $("buat").onclick=async()=>{
   }catch(e){
     st(e.message==="BATAL"?"Dibatalkan.":"Gagal: "+e.message);
   }finally{
-    if(wl)wl.release();sib(false);
+    if(wl)wl.release();if(wk){wk.terminate();wk=null}S.forEach(s=>{if(s.bmp){s.bmp.close();s.bmp=null}});sib(false);
   }
 };
 </script>
