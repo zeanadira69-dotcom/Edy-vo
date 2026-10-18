@@ -34,13 +34,13 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 </head>
 <body>
 <main>
-<p style="margin:16px 0 0"><a href="index.html">← Edy VO</a></p>
+<p style="margin:16px 0 0"><a href="index.html">← Edy Text To Video 🤙</a></p>
 <h1>Studio: naskah jadi video.</h1>
 <p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 yang direkam langsung di browser.</p>
 
 <section class="card">
 <label for="naskah">Naskah</label>
-<textarea id="naskah">isi naskah konten kalian disini bosku 😎</textarea>
+<textarea id="naskah">silahkan masukkan naskah kalian bosku 😎</textarea>
 <p class="hint"><span id="cnt">0</span> / 1.000 karakter</p>
 <button id="pecah">Pecah jadi adegan</button>
 </section>
@@ -105,7 +105,7 @@ function bikin(p,i,n){
 }
 function hitung(){const n=S.length?S.reduce((a,s)=>a+s.narasi.trim().length,0)+S.length-1:$("naskah").value.length;$("cnt").textContent=n.toLocaleString("id-ID")}
 function tampil(){
-  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><div class="row"><div><label>Gambar</label><select data-f="ikon">${Object.keys(IKL).map(k=>`<option value="${k}"${k===s.ikon?" selected":""}>${IKL[k]}</option>`).join("")}</select></div><div><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img></div></div>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>${s.jenis==="angka"||s.jenis==="penutup"?`<label>${s.jenis==="angka"?"Angka (mis. 40%)":"Teks tombol"}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
+  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>${s.jenis==="angka"||s.jenis==="penutup"?`<label>${s.jenis==="angka"?"Angka (mis. 40%)":"Teks tombol"}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
   hitung();
 }
 $("naskah").addEventListener("input",()=>{if(!S.length)hitung()});
