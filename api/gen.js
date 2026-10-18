@@ -3,17 +3,22 @@
 const MODELS = [process.env.GEMINI_TEXT_MODEL, "gemini-3.5-flash", "gemini-2.5-flash"].filter(Boolean);
 const hits = new Map();
 
-const GUIDE = `Kamu pembuat animasi canvas 2D untuk video vertikal 720x1280. Untuk SETIAP adegan di bawah, tulis ISI fungsi JavaScript (tanpa pembungkus function) dengan parameter (g,t,W,H,P).
+const GUIDE = `Kamu pembuat animasi canvas 2D untuk SATU kartu visual di video vertikal 720x1280 bergaya motion graphic gelap dengan aksen oranye. Untuk SETIAP adegan di bawah, tulis ISI fungsi JavaScript (tanpa pembungkus function) dengan parameter (g,t,W,H,P,K,D).
 Aturan:
-- g = CanvasRenderingContext2D. t = detik sejak adegan mulai (desimal). W=720, H=1280. P = {am:"#ffb347",bl:"#4cc9f0",tx:"#e8eff7",pk:"#f78ca2",gr:"#2a9d8f"}.
-- Gambar HANYA di area x 40-680, y 60-580 (pusat 360,320). Jangan mengisi latar belakang.
-- Gambarkan SUBJEK adegan secara visual dengan bentuk sederhana yang mudah dikenali (hewan, benda, grafik, simbol). Tanpa teks sama sekali.
-- Animasi hanya boleh bergantung pada t: masuk halus dalam 0,6 detik pertama (skala atau transparansi), lalu bergerak terus (melayang, berdenyut, berputar, bergelombang).
-- Hanya pakai g, t, W, H, P, dan Math. Tanpa gambar eksternal, tanpa fetch, tanpa async, loop maksimal 300 iterasi, tanpa komentar.
-- Panjang 15 sampai 45 baris.
+- g = CanvasRenderingContext2D. t = detik sejak adegan mulai (desimal). D = durasi adegan (detik). W=720, H=1280. P = {am:"#e8764f",bl:"#4cc9f0",tx:"#f2efe9",pk:"#f78ca2",gr:"#2a9d8f",bg:"#121212",mu:"#8d8a84"}. Warna utama P.am di atas latar gelap, aksen P.bl/P.pk/P.gr secukupnya.
+- Kartu visual berada di kotak x 60-660, y 450-890 (pusat 360,670). Gambar HANYA di dalam kotak itu. Jangan mengisi latar belakang (latar kartu sudah gelap).
+- Helper K: K.e(x) easing 0-1, K.eb(x) easing memantul, K.cl(x) batas 0-1, K.rr(g,x,y,w,h,r) membuat path kotak bulat (lalu g.fill() atau g.stroke()), K.txt(g,teks,x,y,ukuran,warna,"l"|"c"|"r") menulis teks, K.glow(g,x,y,radius,warna,alpha), K.parts(g,t,jumlah,warna,seed) partikel melayang, K.count(nilai,t,t0,durasi) angka menghitung naik.
+- Pilih gaya sesuai isi adegan:
+  * antarmuka, aplikasi, chat, prompt: jendela UI sederhana (kotak bulat, kolom input, teks pendek yang mengetik huruf demi huruf lewat slice berdasarkan t, kursor berkedip, tombol oranye).
+  * proses atau alur: kotak bernomor dihubungkan panah, muncul bergantian sesuai t.
+  * angka atau statistik: grafik batang atau garis yang tumbuh, angka naik dengan K.count.
+  * benda, hewan, konsep: ilustrasi datar dari bentuk dasar yang mudah dikenali.
+- Teks di dalam visual maksimal 4 kata per elemen, bahasa Indonesia, ukuran minimal 26.
+- Animasi hanya bergantung pada t: masuk halus dalam 0,6 detik pertama (skala atau transparansi), lalu bergerak terus (melayang, berdenyut, berputar, bergelombang).
+- Hanya pakai g, t, W, H, P, K, D dan Math. Tanpa gambar eksternal, tanpa fetch, tanpa async, loop maksimal 300 iterasi, tanpa komentar. Panjang 20 sampai 60 baris.
 Format keluaran: untuk tiap adegan tulis satu baris "### N" (N = nomor adegan), lalu kodenya. Tanpa markdown, tanpa penjelasan.
 Contoh isi kode yang benar:
-const k=Math.min(1,t/0.6),e=1-Math.pow(1-k,3);g.save();g.translate(360,320+Math.sin(t*2)*10);g.scale(e,e);g.fillStyle=P.am;g.beginPath();g.arc(0,0,120,0,Math.PI*2);g.fill();g.fillStyle=P.bl;g.beginPath();g.arc(Math.cos(t*2)*160,Math.sin(t*2)*160,24,0,Math.PI*2);g.fill();g.restore();
+const e=K.e(t/0.6);g.save();g.translate(360,670);g.scale(e,e);g.fillStyle="#1f1e1c";K.rr(g,-240,-120,480,240,24);g.fill();g.strokeStyle=P.am;g.lineWidth=3;g.stroke();const s="Buat video 30 detik",n=Math.min(s.length,Math.floor(Math.max(0,t-0.6)*12));K.txt(g,s.slice(0,n)+(Math.floor(t*2)%2?"|":""),-210,10,34,P.tx,"l");g.fillStyle=P.am;K.rr(g,130,60,90,44,22);g.fill();g.restore();
 `;
 
 function bersihkan(code) {

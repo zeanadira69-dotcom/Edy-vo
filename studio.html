@@ -36,7 +36,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <main>
 <p style="margin:16px 0 0"><a href="index.html">← Edy VO</a></p>
 <h1>Studio: naskah jadi video.</h1>
-<p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 yang direkam langsung di browser.</p>
+<p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 bergaya motion graphic yang direkam langsung di browser. Adegan pertama jadi hook, terakhir jadi penutup; ubah jenis adegan bila perlu.</p>
 
 <section class="card">
 <label for="naskah">Naskah</label>
@@ -57,7 +57,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <select id="style"><option value="normal">Normal</option><option value="hangat">Hangat</option><option value="semangat">Semangat</option><option value="tenang">Tenang</option></select></div>
 </div>
 <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="bisu">Pratinjau tanpa suara (tanpa API key)</label>
-<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="aiv" checked>Visual buatan AI (Gemini)</label><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="subon">Tampilkan subtitle</label><p class="hint">API key Gemini diisi di halaman utama (Pengaturan API key), dan dipakai juga di sini.</p>
+<label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="aiv" checked>Visual buatan AI (Gemini)</label><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="subon" checked>Subtitle karaoke</label><p class="hint">API key Gemini diisi di halaman utama (Pengaturan API key), dan dipakai juga di sini.</p>
 </div>
 
 <div id="sc"></div>
@@ -72,7 +72,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 </main>
 
 <script>
-const $=id=>document.getElementById(id),W=720,H=1280,F='"Bricolage Grotesque",system-ui,sans-serif',AM="#ffb347",TX="#e8eff7",MU="#9bb0c6";
+const $=id=>document.getElementById(id),W=720,H=1280,F='"Bricolage Grotesque",system-ui,sans-serif',AM="#e8764f",TX="#f2efe9",MU="#8d8a84",BG="#121212",PN="#1b1a19",LN="#34322f";
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3);
 let S=[],batal=false,A=1,TOT=1;
 const getKey=()=>{try{return localStorage.getItem("edyvo_gemini_key")||""}catch(e){return ""}};
@@ -81,7 +81,9 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const clip=(s,n)=>{s=s.replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n+1),i=c.lastIndexOf(" ");return (i>n*.5?c.slice(0,i):s.slice(0,n)).replace(/[,.;:]+$/,"")};
 const PRE=/^(satu|dua|tiga|empat|lima|enam|pertama|kedua|ketiga|keempat|kelima|\d+[.)])[\s,.:]+/i;
 const st=t=>$("status").textContent=t;
-const JN={judul:"Judul bergerak",angka:"Angka besar",poin:"Daftar poin",penutup:"Penutup"};
+const JN={judul:"Hook besar",visual:"Judul + visual",langkah:"Langkah + visual",demo:"Demo + visual",angka:"Angka besar",poin:"Daftar poin",penutup:"Penutup"};
+const AIJ=["visual","langkah","demo"];
+const EL={angka:"Angka (mis. 40%)",penutup:"Teks tombol",langkah:"Label chip (kosong = LANGKAH)",demo:"Label chip (kosong = DEMO)",visual:"Label chip (opsional)"};
 const IKL={octopus:"Gurita",heart:"Jantung",drop:"Tetes air",bolt:"Petir",clock:"Jam",globe:"Bumi",bulb:"Lampu",star:"Bintang"};
 const IKN=[["octopus",/gurita|cumi|tentakel/],["heart",/jantung|hati|cinta|sehat/],["drop",/darah|air|hujan|laut|tetes/],["bolt",/listrik|energi|cepat|kilat|daya|charger/],["clock",/waktu|jam|menit|detik|tahun|durasi/],["globe",/dunia|bumi|global|negara|planet|internet/],["bulb",/ide|lampu|pintar|otak|belajar|tahu/]];
 const ikon=p=>{const q=p.toLowerCase();for(const [k,r] of IKN)if(r.test(q))return k;return "star"};
@@ -97,15 +99,18 @@ function pecah(text){
 }
 function bikin(p,i,n){
   const m=p.match(/\d+(?:[.,]\d+)?\s*%?/);
-  let jenis="judul",layar=clip(p.split(/(?<=[.!?])\s/)[0],44),extra="";
+  let jenis="visual",layar=clip(p.split(/(?<=[.!?])\s/)[0],44),extra="";
   if(n>1&&i===n-1){jenis="penutup";extra="Simpan videonya";layar=clip(p.split(/[,.!?]/)[0],30)}
+  else if(n>1&&i===0){jenis="judul"}
   else if(PRE.test(p)){jenis="poin";layar=cap(clip(p.replace(PRE,"").split(/[,.;]| dan /)[0],26))}
+  else if(/^langkah\b/i.test(p)){jenis="langkah";layar=clip(p.replace(/^langkah\s+\S+[\s,.:]*/i,"").split(/[.!?]/)[0],44)}
+  else if(/\b(demo|contoh|coba)\b/i.test(p.slice(0,60))){jenis="demo";layar=clip(p.replace(/^(demo|contoh)\s+\S+[\s,.:]*/i,"").split(/[.!?]/)[0],44)}
   else if(m&&i>0){jenis="angka";extra=m[0].trim();layar=clip(p.replace(m[0],""),40)}
   return{narasi:p,jenis,layar,extra,ikon:ikon(p),img:null};
 }
 function hitung(){const n=S.length?S.reduce((a,s)=>a+s.narasi.trim().length,0)+S.length-1:$("naskah").value.length;$("cnt").textContent=n.toLocaleString("id-ID")}
 function tampil(){
-  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>${s.jenis==="angka"||s.jenis==="penutup"?`<label>${s.jenis==="angka"?"Angka (mis. 40%)":"Teks tombol"}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
+  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}${AIJ.includes(s.jenis)?'<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>':""}${EL[s.jenis]?`<label>${EL[s.jenis]}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
   hitung();
 }
 $("naskah").addEventListener("input",()=>{if(!S.length)hitung()});
@@ -153,43 +158,130 @@ function kata(tx,size,wt,yc,t,align,acc){
   });
   g.globalAlpha=A;return top+o.L.length*o.lh;
 }
+const kap=t=>(t||"").toUpperCase();
+function kepala(tx,size,yTop,t,mode){
+  const o=tata(kap(tx)||"…",size,800,W-120);
+  o.L.forEach((ln,r)=>{
+    let x=60;
+    ln.forEach(b=>{
+      const p=ease((t-.1-b.idx*.11)/.4),last=b.idx===o.n-1,out=mode==="out"&&o.n>=3&&b.idx===1;
+      g.font=`800 ${size}px ${F}`;g.globalAlpha=p;g.textAlign="left";
+      const y=yTop+r*o.lh+size*.88+(1-p)*40;
+      if(out){g.lineWidth=3;g.lineJoin="round";g.strokeStyle=TX;g.strokeText(b.word,x,y)}
+      else{g.fillStyle=last?AM:TX;g.fillText(b.word,x,y)}
+      x+=b.ww+o.sp;
+    });
+  });
+  g.globalAlpha=1;return yTop+o.L.length*o.lh;
+}
+function chip(label,no,t){
+  const p=ease((t-.02)/.3);g.globalAlpha=p;
+  g.font=`800 22px ${F}`;g.textAlign="left";
+  const lw=g.measureText(label).width,w=lw+(no?72:44);
+  g.fillStyle="rgba(232,118,79,.16)";rr(60,112,w,44,22);
+  g.strokeStyle=AM;g.lineWidth=1.5;g.stroke();
+  let x=82;
+  if(no){g.fillStyle=AM;g.beginPath();g.arc(86,134,15,0,7);g.fill();g.fillStyle=BG;g.font=`800 17px ${F}`;g.textAlign="center";g.fillText(no,86,140);g.textAlign="left";g.font=`800 22px ${F}`;x=112}
+  g.fillStyle=AM;g.fillText(label,x,142);g.globalAlpha=1;
+}
+function aiHero(s,t){
+  if(wk){
+    const n=performance.now();
+    if(!pend){pend=n;wk.postMessage({k:"draw",i:S.indexOf(s),t,w:W,h:H,d:s.dur})}
+    else if(n-pend>1500){S.forEach(x=>{if(x.ai==="ok")x.ai="bad"});wk.terminate();wk=null}
+  }
+  if(s.bmp)g.drawImage(s.bmp,0,0);
+}
+function kartu(s,t){
+  const x=60,y=450,w=600,h=440,p=ease((t-.12)/.5),cx=x+w/2,cy=y+h/2;
+  g.save();g.globalAlpha=p;g.translate(0,(1-p)*50);
+  g.fillStyle=PN;rr(x,y,w,h,28);g.strokeStyle=LN;g.lineWidth=2;g.stroke();
+  g.beginPath();g.roundRect(x,y,w,h,28);g.clip();
+  if(s.img){
+    const iw=s.img.width,ih=s.img.height,r=Math.max(w/iw,h/ih)*(1+.12*t/Math.max(s.dur,1));
+    g.drawImage(s.img,cx-iw*r/2,cy-ih*r/2,iw*r,ih*r);
+  }else if(s.ai==="ok"){aiHero(s,t)}
+  else{
+    for(let i=0;i<3;i++){const u=(t*.35+i/3)%1;g.globalAlpha=p*(1-u)*.35;g.strokeStyle=AM;g.lineWidth=4;g.beginPath();g.arc(cx,cy,60+u*150,0,7);g.stroke()}
+    for(let i=0;i<6;i++){const a=t*(.5+i*.07)+i*1.05,r=150+(i%2)*30;g.globalAlpha=p*.8;g.fillStyle=i%2?"#4cc9f0":AM;g.beginPath();g.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r*.7,6+i%3*2,0,7);g.fill()}
+    g.globalAlpha=p;
+    const k=IK[s.ikon]||IK.star,sc=(1+.04*Math.sin(t*3))*(.6+.4*p);
+    g.translate(cx,cy+Math.sin(t*2)*8);g.scale(110*sc,110*sc);k(t);
+  }
+  g.restore();g.globalAlpha=1;
+}
 const T={
-  judul(s,t){const b=kata(s.layar||"…",96,800,H*.66,t,"l",true);g.fillStyle=AM;g.fillRect(60,b+24,360*ease((t-.7)/.6),8)},
+  judul(s,t){
+    const tx=s.layar||"…",size=tx.length<=24?104:tx.length<=40?84:68;
+    const o=tata(kap(tx),size,800,W-120),h=o.L.length*o.lh;
+    const b=kepala(tx,size,Math.max(170,H*.44-h/2),t,"out");
+    g.fillStyle=AM;g.fillRect(60,b+28,300*ease((t-.7)/.6),8);
+  },
+  visual(s,t){
+    const lb=(s.extra||"").trim(),n=(s.layar||"").length,top=lb?176:140;
+    if(lb)chip(kap(lb),"",t);
+    kepala(s.layar,n<=14?84:n<=26?64:52,top,t);kartu(s,t);
+  },
+  langkah(s,t){
+    chip(kap(s.extra||"Langkah"),s.no,t);
+    const n=(s.layar||"").length;kepala(s.layar,n<=14?84:n<=26?64:52,176,t);kartu(s,t);
+  },
+  demo(s,t){
+    chip(kap(s.extra||("Demo "+(s.no||""))).trim(),"",t);
+    const n=(s.layar||"").length;kepala(s.layar,n<=14?84:n<=26?64:52,176,t);kartu(s,t);
+  },
   angka(s,t){
     let txt=s.extra||"XX";const m=txt.match(/^([^\d]*)([\d.,]+)(.*)$/);
     if(m){const v=parseFloat(m[2].replace(",","."));if(isFinite(v)){const d=(m[2].match(/[.,](\d{1,2})$/)||[,""])[1].length;txt=m[1]+(v*ease(t/1.4)).toFixed(d).replace(".",",")+m[3]}}
-    g.font=`800 190px ${F}`;g.fillStyle=AM;g.textAlign="center";g.fillText(txt,W/2,H*.6);g.textAlign="left";
-    kata(s.layar||"",48,600,H*.6+130,t-.4,"c",false);
+    g.font=`800 190px ${F}`;g.fillStyle=AM;g.textAlign="center";g.fillText(txt,W/2,H*.46);g.textAlign="left";
+    kata(kap(s.layar||""),48,800,H*.46+130,t-.4,"c",false);
   },
   poin(s,t){
-    const it=s.grp,rh=130,gp=22,tot=it.length*(rh+gp)-gp,y0=H*.66-tot/2;
+    const it=s.grp,rh=130,gp=22,tot=it.length*(rh+gp)-gp,y0=H*.46-tot/2;
     it.forEach((x,k)=>{
       const p=ease((t-.05-k*.1)/.4),y=y0+k*(rh+gp),on=k===s.gi,dx=(1-p)*-80;
-      g.globalAlpha=A*p;g.fillStyle=on?AM:"#1c2f44";rr(60+dx,y,W-120,rh,22);
-      g.fillStyle=on?"#1a1204":"#27405b";g.beginPath();g.arc(120+dx,y+rh/2,32,0,7);g.fill();
+      g.globalAlpha=p;g.fillStyle=on?AM:PN;rr(60+dx,y,W-120,rh,22);
+      if(!on){g.strokeStyle=LN;g.lineWidth=2;g.stroke()}
+      g.fillStyle=on?BG:LN;g.beginPath();g.arc(120+dx,y+rh/2,32,0,7);g.fill();
       g.fillStyle=on?AM:MU;g.font=`800 34px ${F}`;g.textAlign="center";g.fillText(k+1,120+dx,y+rh/2+12);g.textAlign="left";
-      let fs=44;g.font=`600 ${fs}px ${F}`;while(g.measureText(x).width>W-60-176-30&&fs>24){fs-=2;g.font=`600 ${fs}px ${F}`}
-      g.fillStyle=on?"#1a1204":MU;g.fillText(x,176+dx,y+rh/2+fs*.35);
+      let fs=44;g.font=`700 ${fs}px ${F}`;while(g.measureText(x).width>W-60-176-30&&fs>24){fs-=2;g.font=`700 ${fs}px ${F}`}
+      g.fillStyle=on?BG:MU;g.fillText(x,176+dx,y+rh/2+fs*.35);
     });
-    g.globalAlpha=A;
+    g.globalAlpha=1;
   },
   penutup(s,t){
-    const b=kata(s.layar||"Terima kasih",92,800,H*.62,t,"c",true),p=ease((t-.9)/.5),sc=1+.03*Math.sin(t*5),bw=460*sc,bh=110*sc;
-    g.globalAlpha=A*p;g.fillStyle=AM;rr((W-bw)/2,b+50,bw,bh,28);
-    g.fillStyle="#1a1204";g.font=`800 42px ${F}`;g.textAlign="center";g.fillText(s.extra||"Ikuti kami",W/2,b+50+bh/2+15);
+    const b=kata(kap(s.layar||"Terima kasih"),80,800,H*.42,t,"c",true),p=ease((t-.9)/.5),sc=1+.03*Math.sin(t*5),bw=460*sc,bh=110*sc;
+    g.globalAlpha=p;g.fillStyle=AM;rr((W-bw)/2,b+50,bw,bh,28);
+    g.fillStyle=BG;g.font=`800 42px ${F}`;g.textAlign="center";g.fillText(s.extra||"Ikuti kami",W/2,b+50+bh/2+15);
     g.fillStyle=MU;g.font=`400 30px ${F}`;g.fillText("Dibuat dengan AI",W/2,b+50+bh+70);
-    g.textAlign="left";g.globalAlpha=A;
+    g.textAlign="left";g.globalAlpha=1;
   }
 };
 const chunks=t=>{const o=[];let b="";for(const w of t.split(/\s+/).filter(Boolean)){if(b&&(b+" "+w).length>30){o.push(b);b=w}else b=b?b+" "+w:w}if(b)o.push(b);return o};
 function sub(s,t){
-  const c=s.ch;if(!c.length)return;
-  const tot=c.reduce((a,x)=>a+x.length,0),u=Math.min(t/s.dur,.999)*tot;let acc=0,k=0;
-  for(;k<c.length-1;k++){acc+=c[k].length;if(u<acc)break}
-  g.font=`600 38px ${F}`;g.textAlign="center";
-  const w=g.measureText(c[k]).width+44;
-  g.fillStyle="rgba(0,0,0,.6)";rr((W-w)/2,H-170,w,76,18);
-  g.fillStyle=TX;g.fillText(c[k],W/2,H-170+51);g.textAlign="left";
+  const ws=s.kw;if(!ws||!ws.length)return;
+  const f=clamp(t/Math.max(.1,s.dur-.2));let k=0;while(k<ws.length-1&&f>=ws[k].c1)k++;
+  const ch=s.kc.find(c=>c.includes(k))||s.kc[0];
+  g.font=`800 46px ${F}`;g.textAlign="left";g.globalAlpha=1;
+  const sp=g.measureText(" ").width,L=[[]];let x=0;
+  ch.forEach(i=>{const ww=g.measureText(ws[i].w).width;if(x+ww>580&&L[L.length-1].length){L.push([]);x=0}L[L.length-1].push({i,ww});x+=ww+sp});
+  L.forEach((ln,r)=>{
+    const lw=ln.reduce((a,b)=>a+b.ww,0)+sp*(ln.length-1);let px=(W-lw)/2;
+    ln.forEach(b=>{
+      g.lineWidth=7;g.lineJoin="round";g.strokeStyle="rgba(0,0,0,.65)";g.strokeText(ws[b.i].w,px,1010+r*58);
+      g.fillStyle=b.i<=k?TX:"rgba(242,239,233,.3)";g.fillText(ws[b.i].w,px,1010+r*58);px+=b.ww+sp;
+    });
+  });
+}
+function hud(Tm){
+  g.globalAlpha=1;g.font=`800 17px ${F}`;g.textAlign="left";
+  const a="DIBUAT DENGAN AI",wa=g.measureText(a).width+52;
+  g.fillStyle="rgba(255,255,255,.07)";rr(36,34,wa,38,19);
+  g.fillStyle=AM;g.beginPath();g.arc(58,53,5,0,7);g.fill();
+  g.fillStyle=TX;g.fillText(a,74,59);
+  const b="FRAME "+String(Math.floor(Tm*30)).padStart(4,"0"),wb=g.measureText(b).width+36;
+  g.fillStyle="rgba(255,255,255,.07)";rr(W-36-wb,34,wb,38,19);
+  g.fillStyle=MU;g.fillText(b,W-36-wb+18,59);
 }
 const IK={
 heart(){g.fillStyle="#ff6b81";g.beginPath();g.moveTo(0,.8);g.bezierCurveTo(-1.3,-.1,-.7,-1,0,-.4);g.bezierCurveTo(.7,-1,1.3,-.1,0,.8);g.fill()},
@@ -202,7 +294,7 @@ globe(t){g.fillStyle="#2a9d8f";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.stroke
 octopus(t){g.fillStyle="#f78ca2";g.beginPath();g.arc(0,-.25,.7,Math.PI,0);g.lineTo(.7,.1);g.lineTo(-.7,.1);g.fill();g.strokeStyle="#f78ca2";g.lineWidth=.16;g.lineCap="round";for(let i=0;i<5;i++){const x=-.55+i*.275;g.beginPath();g.moveTo(x,.05);g.quadraticCurveTo(x+Math.sin(t*3+i)*.2,.5,x+Math.sin(t*3+i+1)*.25,.95);g.stroke()}g.fillStyle="#fff";g.beginPath();g.arc(-.25,-.3,.15,0,7);g.arc(.25,-.3,.15,0,7);g.fill();g.fillStyle="#0d1b2a";g.beginPath();g.arc(-.25,-.3,.07,0,7);g.arc(.25,-.3,.07,0,7);g.fill()}
 };
 const WSRC=`let cv,g,F={};self.fetch=self.XMLHttpRequest=self.WebSocket=self.EventSource=undefined;
-const P={am:"#ffb347",bl:"#4cc9f0",tx:"#e8eff7",pk:"#f78ca2",gr:"#2a9d8f",bg:"#0d1b2a",mu:"#9bb0c6"};
+const P={am:"#e8764f",bl:"#4cc9f0",tx:"#f2efe9",pk:"#f78ca2",gr:"#2a9d8f",bg:"#121212",mu:"#8d8a84"};
 const FN='"Bricolage Grotesque",system-ui,sans-serif';
 const cl=x=>Math.min(1,Math.max(0,x));
 const K={cl,e:x=>1-Math.pow(1-cl(x),3),eb:x=>{x=cl(x);const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)},
@@ -219,7 +311,7 @@ onmessage=function(e){const m=e.data;
 if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d")}
 else if(m.k==="code"){try{F[m.i]=new Function("g","t","W","H","P","K","D",m.code);postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
 else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();F[m.i](g,m.t,m.w,m.h,P,K,m.d||5);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
-const ckey=s=>[s.narasi.trim(),s.jenis,s.layar,s.extra].join("|");
+const ckey=s=>[s.narasi.trim(),s.jenis,s.layar,s.jenis==="angka"?s.extra:""].join("|");
 const spay=(i,s,u)=>({i,narasi:s.narasi.trim(),layar:s.layar,j:s.jenis,x:s.extra,g:s.grp,k:s.gi,d:Math.round((s.dur||5)*10)/10,ulang:u?1:0});
 let wk=null,pend=0;
 async function genKode(list){
@@ -245,46 +337,32 @@ function kirimKode(){
     setTimeout(res,3000);
   });
 }
-function aiHero(s,t){
-  if(wk){
-    const n=performance.now();
-    if(!pend){pend=n;wk.postMessage({k:"draw",i:S.indexOf(s),t,w:W,h:H,d:s.dur})}
-    else if(n-pend>1500){S.forEach(x=>{if(x.ai==="ok")x.ai="bad"});wk.terminate();wk=null}
-  }
-  g.globalAlpha=A;
-  if(s.bmp)g.drawImage(s.bmp,0,0);
-}
-function hero(s,t){
-  if(s.ai==="ok"&&!s.img){aiHero(s,t);return 1}
-  const cx=W/2,cy=320,p=ease(t/.6);
-  g.save();
-  for(let i=0;i<3;i++){const u=(t*.35+i/3)%1;g.globalAlpha=A*(1-u)*.35;g.strokeStyle=AM;g.lineWidth=4;g.beginPath();g.arc(cx,cy,120+u*190,0,7);g.stroke()}
-  for(let i=0;i<6;i++){const a=t*(.5+i*.07)+i*1.05,r=230+(i%2)*40;g.globalAlpha=A*.8;g.fillStyle=i%2?"#4cc9f0":AM;g.beginPath();g.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r*.8,8+i%3*3,0,7);g.fill()}
-  g.globalAlpha=A*p;
-  if(s.img){
-    const w=600,h=460,x=60,y=90,iw=s.img.width,ih=s.img.height,r=Math.max(w/iw,h/ih)*(1+.12*t/Math.max(s.dur,1));
-    g.beginPath();g.roundRect(x,y,w,h,28);g.clip();
-    g.drawImage(s.img,x+w/2-iw*r/2,y+h/2-ih*r/2,iw*r,ih*r);
-  }else{
-    const k=IK[s.ikon]||IK.star,sc=(1+.04*Math.sin(t*3))*(.6+.4*p);
-    g.translate(cx,cy+Math.sin(t*2)*10);g.scale(150*sc,150*sc);k(t);
-  }
-  g.restore();g.globalAlpha=A;
-}
 function frame(Tm){
   let k=0;while(k<S.length-1&&Tm>=S[k].t1)k++;
   const s=S[k],t=Tm-s.t0;
-  g.globalAlpha=1;g.fillStyle="#0d1b2a";g.fillRect(0,0,W,H);
-  const gl=g.createRadialGradient(W/2+Math.sin(Tm*.5)*140,H*.3,20,W/2,H*.3,560);
-  gl.addColorStop(0,"rgba(255,179,71,.14)");gl.addColorStop(1,"rgba(255,179,71,0)");
+  g.globalAlpha=1;g.textAlign="left";g.fillStyle=BG;g.fillRect(0,0,W,H);
+  const gl=g.createRadialGradient(W/2+Math.sin(Tm*.5)*120,H*.2,20,W/2,H*.2,620);
+  gl.addColorStop(0,"rgba(232,118,79,.22)");gl.addColorStop(1,"rgba(232,118,79,0)");
   g.fillStyle=gl;g.fillRect(0,0,W,H);
-  A=ease(t/.35);g.globalAlpha=A;if(!hero(s,t))T[s.jenis](s,t);
-  A=1;g.globalAlpha=1;if($("subon").checked)sub(s,t);
-  g.fillStyle=AM;g.fillRect(0,0,W*Tm/TOT,8);
+  A=1;(T[s.jenis]||T.visual)(s,t);
+  g.globalAlpha=1;if($("subon").checked)sub(s,t);
+  hud(Tm);
+  if(k>0&&t<.35){const q=ease(t/.35);g.fillStyle=AM;g.fillRect(W*q,0,W*(1-q),H)}
+  g.fillStyle=AM;g.fillRect(0,0,W*Tm/TOT,6);
 }
 function siap(total){
   const L=S.map(s=>Math.max(s.narasi.length,24)),sum=L.reduce((a,b)=>a+b,0);let t=0;
   S.forEach((s,i)=>{s.dur=total*L[i]/sum;s.t0=t;t+=s.dur;s.t1=t;s.ch=chunks(s.narasi)});
+  let nl=0,nd=0;
+  S.forEach(s=>{
+    if(s.jenis==="langkah")s.no=String(++nl).padStart(2,"0");
+    if(s.jenis==="demo")s.no=String(++nd).padStart(2,"0");
+    const ws=s.narasi.trim().split(/\s+/).filter(Boolean),tot=ws.reduce((a,w)=>a+w.length+1,0)||1;let c=0;
+    s.kw=ws.map(w=>{const o={w:w.toUpperCase(),c0:c/tot,c1:(c+w.length+1)/tot};c+=w.length+1;return o});
+    s.kc=[];let cur=[],n=0;
+    ws.forEach((w,i)=>{if(cur.length&&(n+w.length>26||cur.length>=5)){s.kc.push(cur);cur=[];n=0}cur.push(i);n+=w.length+1});
+    if(cur.length)s.kc.push(cur);
+  });
   let i=0;
   while(i<S.length){
     if(S[i].jenis!=="poin"){i++;continue}
@@ -316,7 +394,7 @@ $("buat").onclick=async()=>{
     if(!bisu){st("Membuat suara…");buf=await ac.decodeAudioData(await suara());total=buf.duration+.8}
     siap(total);
     if($("aiv").checked&&getKey()){
-      const need=S.map((s,i)=>({i,s})).filter(x=>!x.s.code||x.s.cn!==ckey(x.s));
+      const need=S.map((s,i)=>({i,s})).filter(x=>AIJ.includes(x.s.jenis)&&(!x.s.code||x.s.cn!==ckey(x.s)));
       if(need.length){
         st("Membuat visual dengan AI…");
         try{

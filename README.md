@@ -17,11 +17,17 @@ Audio VO + klip video/gambar + naskah (opsional, untuk subtitle) digabung jadi s
 Klip dipakai berurutan dan diulang sampai menutup durasi audio. Subtitle dibagi menurut panjang karakter (perkiraan, bukan sinkron per kata). Hasil MP4 bila browser mendukung, kalau tidak WebM. File .srt juga bisa diunduh.
 Render berjalan real-time (lama proses = lama audio), jadi layar harus tetap menyala.
 
+## Studio (`studio.html`)
+
+Naskah jadi video vertikal 9:16 bergaya motion graphic: HUD, chip langkah, judul kinetik, kartu visual animasi buatan Gemini, dan subtitle karaoke. Suara dari `api/tts.js`, visual dari `api/gen.js`. Adegan pertama jadi hook, terakhir jadi penutup; jenis tiap adegan bisa diubah. Hanya jenis "visual/langkah/demo" yang memanggil Gemini untuk membuat animasi.
+
 ## Struktur
 
 ```
 index.html       halaman dan logika VO
 video.html       gabung VO + klip + subtitle jadi video
+studio.html      naskah jadi video motion graphic 9:16
+api/gen.js       fungsi serverless pembuat animasi visual (Gemini)
 api/tts.js       fungsi serverless Vercel (proxy ke Gemini TTS)
 supertonic.js    pemuat model dan sintesis Supertonic 3
 helper.js        dari Supertonic (MIT), tidak diubah selain komentar
