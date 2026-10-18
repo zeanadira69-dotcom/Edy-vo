@@ -19,7 +19,9 @@ Render berjalan real-time (lama proses = lama audio), jadi layar harus tetap men
 
 ## Studio (`studio.html`)
 
-Naskah jadi video vertikal 9:16 bergaya motion graphic: HUD, chip langkah, judul kinetik, kartu visual animasi buatan Gemini, dan subtitle karaoke. Suara dari `api/tts.js`, visual dari `api/gen.js`. Adegan pertama jadi hook, terakhir jadi penutup; jenis tiap adegan bisa diubah. Hanya jenis "visual/langkah/demo" yang memanggil Gemini untuk membuat animasi.
+Naskah jadi video vertikal 9:16 bergaya motion graphic: HUD, chip langkah, judul kinetik, kartu visual animasi buatan Gemini, dan subtitle karaoke. Suara dari `api/tts.js`, visual dari `api/gen.js`. Adegan pertama jadi hook, terakhir jadi penutup; jenis tiap adegan bisa diubah. Hanya jenis "visual/langkah/demo" yang memanggil Gemini untuk membuat animasi kartu.
+
+**Diagram teknik (`diagram.js`)**: adegan penuh layar bergaya gambar teknik (garis putih di atas hitam, panah, label), bergerak. Ada lima gambar siap pakai tanpa Gemini: ekskavator, hidrolik (Pascal), roda gigi, roda timba, TBM. Dipilih otomatis bila narasi menyebut kata kuncinya (lihat `PRESET_KATA`), atau pilih manual per adegan. Untuk topik lain, pilih "AI Gemini" dan Gemini menggambar diagram memakai alat `d` yang sama (prompt di `api/gen.js`). Menambah gambar baru: tulis `PRESET.nama = function(d,t,D){...}` di `diagram.js`.
 
 ## Struktur
 
@@ -27,6 +29,7 @@ Naskah jadi video vertikal 9:16 bergaya motion graphic: HUD, chip langkah, judul
 index.html       halaman dan logika VO
 video.html       gabung VO + klip + subtitle jadi video
 studio.html      naskah jadi video motion graphic 9:16
+diagram.js       pustaka gambar teknik dan adegan diagram siap pakai
 api/gen.js       fungsi serverless pembuat animasi visual (Gemini)
 api/tts.js       fungsi serverless Vercel (proxy ke Gemini TTS)
 supertonic.js    pemuat model dan sintesis Supertonic 3

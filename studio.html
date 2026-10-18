@@ -36,7 +36,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <main>
 <p style="margin:16px 0 0"><a href="index.html">← Edy VO</a></p>
 <h1>Studio: naskah jadi video.</h1>
-<p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 bergaya motion graphic yang direkam langsung di browser. Adegan pertama jadi hook, terakhir jadi penutup; ubah jenis adegan bila perlu.</p>
+<p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 bergaya motion graphic yang direkam langsung di browser. Adegan pertama jadi hook, terakhir jadi penutup. Bila adegan menyebut alat berat (ekskavator, hidrolik, roda gigi, roda timba, TBM), gambar teknik animasinya dipilih otomatis; jenis adegan bisa diubah.</p>
 
 <section class="card">
 <label for="naskah">Naskah</label>
@@ -71,6 +71,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <p class="hint" style="margin-top:28px">Render berjalan real-time: layar harus tetap menyala dan halaman tetap terbuka. Gunakan Chrome. Beri label “dibuat dengan AI” saat memublikasikan.</p>
 </main>
 
+<script src="diagram.js"></script>
 <script>
 const $=id=>document.getElementById(id),W=720,H=1280,F='"Bricolage Grotesque",system-ui,sans-serif',AM="#e8764f",TX="#f2efe9",MU="#8d8a84",BG="#121212",PN="#1b1a19",LN="#34322f";
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3);
@@ -81,7 +82,7 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const clip=(s,n)=>{s=s.replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n+1),i=c.lastIndexOf(" ");return (i>n*.5?c.slice(0,i):s.slice(0,n)).replace(/[,.;:]+$/,"")};
 const PRE=/^(satu|dua|tiga|empat|lima|enam|pertama|kedua|ketiga|keempat|kelima|\d+[.)])[\s,.:]+/i;
 const st=t=>$("status").textContent=t;
-const JN={judul:"Hook besar",visual:"Judul + visual",langkah:"Langkah + visual",demo:"Demo + visual",angka:"Angka besar",poin:"Daftar poin",penutup:"Penutup"};
+const JN={diagram:"Diagram teknik (animasi)",judul:"Hook besar",visual:"Judul + visual",langkah:"Langkah + visual",demo:"Demo + visual",angka:"Angka besar",poin:"Daftar poin",penutup:"Penutup"};
 const AIJ=["visual","langkah","demo"];
 const EL={angka:"Angka (mis. 40%)",penutup:"Teks tombol",langkah:"Label chip (kosong = LANGKAH)",demo:"Label chip (kosong = DEMO)",visual:"Label chip (opsional)"};
 const IKL={octopus:"Gurita",heart:"Jantung",drop:"Tetes air",bolt:"Petir",clock:"Jam",globe:"Bumi",bulb:"Lampu",star:"Bintang"};
@@ -99,18 +100,19 @@ function pecah(text){
 }
 function bikin(p,i,n){
   const m=p.match(/\d+(?:[.,]\d+)?\s*%?/);
-  let jenis="visual",layar=clip(p.split(/(?<=[.!?])\s/)[0],44),extra="";
+  let jenis="visual",layar=clip(p.split(/(?<=[.!?])\s/)[0],44),extra="",preset="";
   if(n>1&&i===n-1){jenis="penutup";extra="Simpan videonya";layar=clip(p.split(/[,.!?]/)[0],30)}
   else if(n>1&&i===0){jenis="judul"}
   else if(PRE.test(p)){jenis="poin";layar=cap(clip(p.replace(PRE,"").split(/[,.;]| dan /)[0],26))}
   else if(/^langkah\b/i.test(p)){jenis="langkah";layar=clip(p.replace(/^langkah\s+\S+[\s,.:]*/i,"").split(/[.!?]/)[0],44)}
   else if(/\b(demo|contoh|coba)\b/i.test(p.slice(0,60))){jenis="demo";layar=clip(p.replace(/^(demo|contoh)\s+\S+[\s,.:]*/i,"").split(/[.!?]/)[0],44)}
+  else if(PRESET_KATA.some(x=>x[1].test(p))){jenis="diagram";preset=PRESET_KATA.find(x=>x[1].test(p))[0]}
   else if(m&&i>0){jenis="angka";extra=m[0].trim();layar=clip(p.replace(m[0],""),40)}
-  return{narasi:p,jenis,layar,extra,ikon:ikon(p),img:null};
+  return{narasi:p,jenis,layar,extra,ikon:ikon(p),img:null,preset};
 }
 function hitung(){const n=S.length?S.reduce((a,s)=>a+s.narasi.trim().length,0)+S.length-1:$("naskah").value.length;$("cnt").textContent=n.toLocaleString("id-ID")}
 function tampil(){
-  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}"><label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}${AIJ.includes(s.jenis)?'<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>':""}${EL[s.jenis]?`<label>${EL[s.jenis]}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
+  $("sc").innerHTML=S.map((s,i)=>`<div class="card" data-i="${i}"><div class="sh"><b>Adegan ${i+1}</b><span style="display:flex;gap:6px"><select data-f="jenis">${Object.keys(JN).map(k=>`<option value="${k}"${k===s.jenis?" selected":""}>${JN[k]}</option>`).join("")}</select><button class="s" data-del>Hapus</button></span></div><label>Narasi</label><textarea data-f="narasi">${esc(s.narasi)}</textarea><label>Teks layar</label><input type="text" data-f="layar" value="${esc(s.layar)}">${s.jenis==="diagram"?`<label>Gambar diagram</label><select data-f="preset"><option value="">AI Gemini (bebas topik)</option>${Object.keys(PRESET_LABEL).map(k=>`<option value="${k}"${k===s.preset?" selected":""}>${PRESET_LABEL[k]}</option>`).join("")}</select>`:""}<label>Foto sendiri (opsional)</label><input type="file" accept="image/*" data-img>${s.img?'<p class="hint">Foto terpasang. <a href="#" data-noimg>Hapus foto</a></p>':""}${AIJ.includes(s.jenis)||(s.jenis==="diagram"&&!s.preset)?'<button class="s" data-regen style="margin-top:10px">Buat ulang visual AI</button>':""}${EL[s.jenis]?`<label>${EL[s.jenis]}</label><input type="text" data-f="extra" value="${esc(s.extra)}">`:""}</div>`).join("");
   hitung();
 }
 $("naskah").addEventListener("input",()=>{if(!S.length)hitung()});
@@ -122,7 +124,7 @@ $("pecah").onclick=()=>{
 };
 $("tambah").onclick=()=>{S.push({narasi:"",jenis:"judul",layar:"",extra:""});tampil()};
 $("sc").addEventListener("input",e=>{const c=e.target.closest("[data-i]"),f=e.target.dataset.f;if(!c||!f)return;S[+c.dataset.i][f]=e.target.value;hitung()});
-$("sc").addEventListener("change",e=>{const d=e.target.dataset;if(d.f==="jenis")tampil();if(d.img!==undefined&&e.target.files[0]){const i=+e.target.closest("[data-i]").dataset.i,im=new Image();im.onload=()=>{S[i].img=im;tampil()};im.src=URL.createObjectURL(e.target.files[0])}});
+$("sc").addEventListener("change",e=>{const d=e.target.dataset;if(d.f==="jenis"||d.f==="preset")tampil();if(d.img!==undefined&&e.target.files[0]){const i=+e.target.closest("[data-i]").dataset.i,im=new Image();im.onload=()=>{S[i].img=im;tampil()};im.src=URL.createObjectURL(e.target.files[0])}});
 $("sc").addEventListener("click",e=>{const d=e.target.dataset;if(d.del!==undefined){S.splice(+e.target.closest("[data-i]").dataset.i,1);tampil()}if(d.noimg!==undefined){e.preventDefault();S[+e.target.closest("[data-i]").dataset.i].img=null;tampil()}
   if(d.regen!==undefined){
     const i=+e.target.closest("[data-i]").dataset.i,s=S[i],b=e.target;
@@ -211,6 +213,7 @@ function kartu(s,t){
   g.restore();g.globalAlpha=1;
 }
 const T={
+  diagram(s,t){T.visual(s,t)},
   judul(s,t){
     const tx=s.layar||"…",size=tx.length<=24?104:tx.length<=40?84:68;
     const o=tata(kap(tx),size,800,W-120),h=o.L.length*o.lh;
@@ -293,7 +296,7 @@ clock(t){g.fillStyle="#e8eff7";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.stroke
 globe(t){g.fillStyle="#2a9d8f";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.strokeStyle="#bff0e6";g.lineWidth=.06;g.beginPath();g.arc(0,0,.9,0,7);g.moveTo(-.9,0);g.lineTo(.9,0);g.moveTo(Math.abs(Math.cos(t))*.9,0);g.ellipse(0,0,Math.abs(Math.cos(t))*.9,.9,0,0,7);g.stroke()},
 octopus(t){g.fillStyle="#f78ca2";g.beginPath();g.arc(0,-.25,.7,Math.PI,0);g.lineTo(.7,.1);g.lineTo(-.7,.1);g.fill();g.strokeStyle="#f78ca2";g.lineWidth=.16;g.lineCap="round";for(let i=0;i<5;i++){const x=-.55+i*.275;g.beginPath();g.moveTo(x,.05);g.quadraticCurveTo(x+Math.sin(t*3+i)*.2,.5,x+Math.sin(t*3+i+1)*.25,.95);g.stroke()}g.fillStyle="#fff";g.beginPath();g.arc(-.25,-.3,.15,0,7);g.arc(.25,-.3,.15,0,7);g.fill();g.fillStyle="#0d1b2a";g.beginPath();g.arc(-.25,-.3,.07,0,7);g.arc(.25,-.3,.07,0,7);g.fill()}
 };
-const WSRC=`let cv,g,F={};self.fetch=self.XMLHttpRequest=self.WebSocket=self.EventSource=undefined;
+const WSRC=`let cv,g,F={},DD,MD={};self.fetch=self.XMLHttpRequest=self.WebSocket=self.EventSource=self.importScripts=undefined;
 const P={am:"#e8764f",bl:"#4cc9f0",tx:"#f2efe9",pk:"#f78ca2",gr:"#2a9d8f",bg:"#121212",mu:"#8d8a84"};
 const FN='"Bricolage Grotesque",system-ui,sans-serif';
 const cl=x=>Math.min(1,Math.max(0,x));
@@ -308,22 +311,31 @@ for(const w of String(s).split(/\\s+/).filter(Boolean)){const ww=g.measureText(w
 L.forEach((ln,r)=>{const lw=ln.reduce((a,b)=>a+b.ww,0)+sp*(ln.length-1);let px=o.a==="c"?x-lw/2:x;ln.forEach(b=>{const p=K.e((t-t0-b.i*(o.gap||.12))/.45);g.globalAlpha=p;g.fillStyle=o.acc&&b.i===idx-1?o.acc:(o.c||P.tx);g.fillText(b.w,px,y+r*lh+z*.85+(1-p)*45);px+=b.ww+sp})});
 g.restore();return y+L.length*lh}};
 onmessage=function(e){const m=e.data;
-if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d")}
-else if(m.k==="code"){try{F[m.i]=new Function("g","t","W","H","P","K","D",m.code);postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
-else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();F[m.i](g,m.t,m.w,m.h,P,K,m.d||5);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
+if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d");DD=DLIB(g)}
+else if(m.k==="code"){try{if(m.mode==="d"){F[m.i]=(new Function("return ("+m.src+")"))();MD[m.i]=1}else{F[m.i]=new Function("g","t","W","H","P","K","D",m.code);MD[m.i]=0}postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
+else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();if(MD[m.i]){g.scale(m.w/360,m.h/640);F[m.i](DD,m.t,m.d||5)}else F[m.i](g,m.t,m.w,m.h,P,K,m.d||5);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
 const ckey=s=>[s.narasi.trim(),s.jenis,s.layar,s.jenis==="angka"?s.extra:""].join("|");
-const spay=(i,s,u)=>({i,narasi:s.narasi.trim(),layar:s.layar,j:s.jenis,x:s.extra,g:s.grp,k:s.gi,d:Math.round((s.dur||5)*10)/10,ulang:u?1:0});
+const spay=(i,s,u)=>({i,narasi:s.narasi.trim(),layar:s.layar,j:s.jenis,x:s.extra,g:s.grp,k:s.gi,d:Math.round((s.dur||5)*10)/10,ulang:u?1:0,m:s.jenis==="diagram"?"d":"c"});
 let wk=null,pend=0;
 async function genKode(list){
   const r=await fetch("/api/gen",{method:"POST",headers:{"Content-Type":"application/json","x-gemini-key":getKey()},body:JSON.stringify({scenes:list})});
   if(!r.ok){let m="Gagal membuat visual";try{m=(await r.json()).error||m}catch(e){}throw new Error(m)}
   return (await r.json()).codes;
 }
+function kode(s){
+  if(s.jenis==="diagram"){
+    if(s.preset&&PRESET[s.preset])return{mode:"d",src:PRESET[s.preset].toString()};
+    if(s.code&&$("aiv").checked)return{mode:"d",src:"function(d,t,D){"+s.code+"}"};
+    return null;
+  }
+  if(AIJ.includes(s.jenis)&&s.code&&$("aiv").checked)return{mode:"c",code:s.code};
+  return null;
+}
 function kirimKode(){
   return new Promise(res=>{
     S.forEach(s=>{s.ai="";s.bmp=null});pend=0;
-    const tot=S.filter(s=>s.code).length;let n=0;
-    wk=new Worker(URL.createObjectURL(new Blob([WSRC],{type:"text/javascript"})));
+    const kk=S.map(kode),tot=kk.filter(Boolean).length;let n=0;
+    wk=new Worker(URL.createObjectURL(new Blob([DLIB.toString()+";\n"+WSRC],{type:"text/javascript"})));
     wk.onmessage=e=>{
       const m=e.data,s=S[m.i];
       if(m.k==="ok"||m.k==="err"){if(s)s.ai=m.k==="ok"?"ok":"bad";if(++n>=tot)res()}
@@ -332,7 +344,7 @@ function kirimKode(){
     };
     wk.onerror=()=>res();
     wk.postMessage({k:"init",w:W,h:H});
-    S.forEach((s,i)=>{if(s.code)wk.postMessage({k:"code",i,code:s.code})});
+    kk.forEach((c,i)=>{if(c)wk.postMessage({k:"code",i,mode:c.mode,src:c.src,code:c.code})});
     if(!tot)res();
     setTimeout(res,3000);
   });
@@ -340,6 +352,12 @@ function kirimKode(){
 function frame(Tm){
   let k=0;while(k<S.length-1&&Tm>=S[k].t1)k++;
   const s=S[k],t=Tm-s.t0;
+  if(s.jenis==="diagram"&&s.ai==="ok"){
+    g.globalAlpha=1;g.textAlign="left";g.fillStyle="#000";g.fillRect(0,0,W,H);
+    g.globalAlpha=ease(t/.3)*(1-ease((t-(s.dur-.35))/.35));aiHero(s,t);
+    g.globalAlpha=1;if($("subon").checked)sub(s,t);
+    g.fillStyle="#fff";g.fillRect(0,0,W*Tm/TOT,3);return;
+  }
   g.globalAlpha=1;g.textAlign="left";g.fillStyle=BG;g.fillRect(0,0,W,H);
   const gl=g.createRadialGradient(W/2+Math.sin(Tm*.5)*120,H*.2,20,W/2,H*.2,620);
   gl.addColorStop(0,"rgba(232,118,79,.22)");gl.addColorStop(1,"rgba(232,118,79,0)");
@@ -394,11 +412,11 @@ $("buat").onclick=async()=>{
     if(!bisu){st("Membuat suara…");buf=await ac.decodeAudioData(await suara());total=buf.duration+.8}
     siap(total);
     if($("aiv").checked&&getKey()){
-      const need=S.map((s,i)=>({i,s})).filter(x=>AIJ.includes(x.s.jenis)&&(!x.s.code||x.s.cn!==ckey(x.s)));
+      const need=S.map((s,i)=>({i,s})).filter(x=>(AIJ.includes(x.s.jenis)||(x.s.jenis==="diagram"&&!x.s.preset))&&(!x.s.code||x.s.cn!==ckey(x.s)));
       if(need.length){
         st("Membuat visual dengan AI…");
         try{
-          const parts=[];for(let q=0;q<need.length;q+=3)parts.push(need.slice(q,q+3));
+          const parts=[];[need.filter(x=>x.s.jenis!=="diagram"),need.filter(x=>x.s.jenis==="diagram")].forEach((G,gi)=>{const n=gi?2:3;for(let q=0;q<G.length;q+=n)parts.push(G.slice(q,q+n))});
           const rs=await Promise.allSettled(parts.map(pt=>genKode(pt.map(x=>spay(x.i,x.s)))));
           let gagal="";
           rs.forEach((r,pi)=>{if(r.status==="fulfilled")parts[pi].forEach(x=>{if(r.value[x.i]){x.s.code=r.value[x.i];x.s.cn=ckey(x.s)}});else gagal=r.reason.message});
@@ -406,8 +424,8 @@ $("buat").onclick=async()=>{
           
         }catch(e){st("Sebagian visual AI gagal ("+e.message+"). Memakai gambar bawaan.");await new Promise(r=>setTimeout(r,1500))}
       }
-      await kirimKode();
-    }else S.forEach(s=>{s.ai=""});
+    }
+    await kirimKode();
     await document.fonts.load(`800 40px ${F}`);
     siap(total);cv.hidden=false;$("hasil").hidden=true;
     try{wl=await navigator.wakeLock.request("screen")}catch(e){}
