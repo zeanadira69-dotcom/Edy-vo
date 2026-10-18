@@ -340,10 +340,10 @@ async function genKode(list){
 function kode(s){
   if(s.jenis==="diagram"){
     if(s.preset&&PRESET[s.preset])return{mode:"d",src:PRESET[s.preset].toString()};
-    if(s.code&&$("aiv").checked)return{mode:"d",src:"function(d,t,D){"+s.code+"}"};
+    if(s.code&&(s.man||$("aiv").checked))return{mode:"d",src:"function(d,t,D){"+s.code+"}"};
     return null;
   }
-  if(AIJ.includes(s.jenis)&&s.code&&$("aiv").checked)return{mode:"c",code:s.code};
+  if(AIJ.includes(s.jenis)&&s.code&&(s.man||$("aiv").checked))return{mode:"c",code:s.code};
   return null;
 }
 function kirimKode(){
@@ -443,6 +443,11 @@ $("buat").onclick=async()=>{
       }
     }
     await kirimKode();
+    if(Object.keys(man).length){
+      const okn=S.filter(x=>x.man&&x.ai==="ok").length,pakai=S.filter(x=>x.man&&kode(x)).length;
+      st("Kode visual manual: "+okn+" dari "+Object.keys(man).length+" bagian terpasang"+(pakai<Object.keys(man).length?" (sebagian ada di jenis adegan yang tidak memakai kode, atau nomornya tidak cocok)":"")+".");
+      await new Promise(r=>setTimeout(r,2200));
+    }
     await document.fonts.load(`800 40px ${F}`);
     siap(total);cv.hidden=false;$("hasil").hidden=true;
     try{wl=await navigator.wakeLock.request("screen")}catch(e){}
