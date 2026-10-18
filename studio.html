@@ -34,13 +34,13 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 </head>
 <body>
 <main>
-<p style="margin:16px 0 0"><a href="index.html">← Edy Text To Video 🤙</a></p>
+<p style="margin:16px 0 0"><a href="index.html">← Edy VO</a></p>
 <h1>Studio: naskah jadi video.</h1>
 <p class="hint">Tempel naskah, satu paragraf per adegan. Visual dibuat otomatis, suara dari Gemini, hasilnya video vertikal 9:16 yang direkam langsung di browser.</p>
 
 <section class="card">
 <label for="naskah">Naskah</label>
-<textarea id="naskah">silahkan masukkan naskah kalian bosku 😎</textarea>
+<textarea id="naskah">isi naskah kalian disini bos</textarea>
 <p class="hint"><span id="cnt">0</span> / 1.000 karakter</p>
 <button id="pecah">Pecah jadi adegan</button>
 </section>
@@ -123,7 +123,7 @@ $("sc").addEventListener("click",e=>{const d=e.target.dataset;if(d.del!==undefin
     const i=+e.target.closest("[data-i]").dataset.i,s=S[i],b=e.target;
     if(!getKey()){st("Isi API key Gemini di halaman utama dulu.");return}
     b.disabled=true;st("Membuat ulang visual…");
-    genKode([{i,narasi:s.narasi.trim(),layar:s.layar,ulang:1}]).then(c=>{s.code=c[i]||"";s.cn=s.narasi.trim();st(s.code?"Visual adegan "+(i+1)+" diperbarui. Akan muncul di video berikutnya.":"Tidak ada kode yang valid, coba lagi.")}).catch(er=>st("Gagal: "+er.message)).finally(()=>{b.disabled=false});
+    genKode([spay(i,s,1)]).then(c=>{s.code=c[i]||"";s.cn=ckey(s);st(s.code?"Visual adegan "+(i+1)+" diperbarui. Akan muncul di video berikutnya.":"Tidak ada kode yang valid, coba lagi.")}).catch(er=>st("Gagal: "+er.message)).finally(()=>{b.disabled=false});
   }
 });
 hitung();
@@ -202,11 +202,25 @@ globe(t){g.fillStyle="#2a9d8f";g.beginPath();g.arc(0,0,.9,0,7);g.fill();g.stroke
 octopus(t){g.fillStyle="#f78ca2";g.beginPath();g.arc(0,-.25,.7,Math.PI,0);g.lineTo(.7,.1);g.lineTo(-.7,.1);g.fill();g.strokeStyle="#f78ca2";g.lineWidth=.16;g.lineCap="round";for(let i=0;i<5;i++){const x=-.55+i*.275;g.beginPath();g.moveTo(x,.05);g.quadraticCurveTo(x+Math.sin(t*3+i)*.2,.5,x+Math.sin(t*3+i+1)*.25,.95);g.stroke()}g.fillStyle="#fff";g.beginPath();g.arc(-.25,-.3,.15,0,7);g.arc(.25,-.3,.15,0,7);g.fill();g.fillStyle="#0d1b2a";g.beginPath();g.arc(-.25,-.3,.07,0,7);g.arc(.25,-.3,.07,0,7);g.fill()}
 };
 const WSRC=`let cv,g,F={};self.fetch=self.XMLHttpRequest=self.WebSocket=self.EventSource=undefined;
-const P={am:"#ffb347",bl:"#4cc9f0",tx:"#e8eff7",pk:"#f78ca2",gr:"#2a9d8f"};
+const P={am:"#ffb347",bl:"#4cc9f0",tx:"#e8eff7",pk:"#f78ca2",gr:"#2a9d8f",bg:"#0d1b2a",mu:"#9bb0c6"};
+const FN='"Bricolage Grotesque",system-ui,sans-serif';
+const cl=x=>Math.min(1,Math.max(0,x));
+const K={cl,e:x=>1-Math.pow(1-cl(x),3),eb:x=>{x=cl(x);const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)},
+count:(v,t,t0,d)=>v*(1-Math.pow(1-cl((t-t0)/d),3)),
+rr:(g,x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()},
+txt:(g,s,x,y,z,c,a)=>{g.save();g.font="700 "+z+"px "+FN;g.fillStyle=c||P.tx;g.textAlign=a==="c"?"center":a==="r"?"right":"left";g.textBaseline="alphabetic";g.fillText(s,x,y);g.restore()},
+glow:(g,x,y,r,c,a)=>{g.save();const q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,c);q.addColorStop(1,"rgba(0,0,0,0)");g.globalAlpha=a==null?.35:a;g.fillStyle=q;g.fillRect(x-r,y-r,r*2,r*2);g.restore()},
+parts:(g,t,n,c,seed)=>{g.save();g.fillStyle=c||P.am;for(let i=0;i<n;i++){const s=((i+1)*(seed||7)*9301%233)/233,u=(i*37%97)/97,x=(s*720+Math.sin(t*.8+i)*30+720)%720,y=(1-((t*.05*(.5+u)+u)%1))*1280;g.globalAlpha=.25+.5*u;g.beginPath();g.arc(x,y,3+u*7,0,7);g.fill()}g.restore()},
+words:(g,s,x,y,z,t,t0,o)=>{o=o||{};g.save();g.font=(o.w||800)+" "+z+"px "+FN;g.textBaseline="alphabetic";const mx=o.max||600,sp=g.measureText(" ").width,lh=z*(o.lh||1.12),L=[[]];let cx=0,idx=0;
+for(const w of String(s).split(/\\s+/).filter(Boolean)){const ww=g.measureText(w).width;if(cx+ww>mx&&L[L.length-1].length){L.push([]);cx=0}L[L.length-1].push({w,ww,i:idx++});cx+=ww+sp}
+L.forEach((ln,r)=>{const lw=ln.reduce((a,b)=>a+b.ww,0)+sp*(ln.length-1);let px=o.a==="c"?x-lw/2:x;ln.forEach(b=>{const p=K.e((t-t0-b.i*(o.gap||.12))/.45);g.globalAlpha=p;g.fillStyle=o.acc&&b.i===idx-1?o.acc:(o.c||P.tx);g.fillText(b.w,px,y+r*lh+z*.85+(1-p)*45);px+=b.ww+sp})});
+g.restore();return y+L.length*lh}};
 onmessage=function(e){const m=e.data;
 if(m.k==="init"){cv=new OffscreenCanvas(m.w,m.h);g=cv.getContext("2d")}
-else if(m.k==="code"){try{F[m.i]=new Function("g","t","W","H","P",m.code);postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
-else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();g.beginPath();g.rect(0,40,m.w,560);g.clip();F[m.i](g,m.t,m.w,m.h,P);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
+else if(m.k==="code"){try{F[m.i]=new Function("g","t","W","H","P","K","D",m.code);postMessage({k:"ok",i:m.i})}catch(x){postMessage({k:"err",i:m.i})}}
+else if(m.k==="draw"){try{g.clearRect(0,0,m.w,m.h);g.save();F[m.i](g,m.t,m.w,m.h,P,K,m.d||5);g.restore();const b=cv.transferToImageBitmap();postMessage({k:"f",i:m.i,bmp:b},[b])}catch(x){postMessage({k:"fe",i:m.i})}}};`;
+const ckey=s=>[s.narasi.trim(),s.jenis,s.layar,s.extra].join("|");
+const spay=(i,s,u)=>({i,narasi:s.narasi.trim(),layar:s.layar,j:s.jenis,x:s.extra,g:s.grp,k:s.gi,d:Math.round((s.dur||5)*10)/10,ulang:u?1:0});
 let wk=null,pend=0;
 async function genKode(list){
   const r=await fetch("/api/gen",{method:"POST",headers:{"Content-Type":"application/json","x-gemini-key":getKey()},body:JSON.stringify({scenes:list})});
@@ -234,14 +248,14 @@ function kirimKode(){
 function aiHero(s,t){
   if(wk){
     const n=performance.now();
-    if(!pend){pend=n;wk.postMessage({k:"draw",i:S.indexOf(s),t,w:W,h:H})}
+    if(!pend){pend=n;wk.postMessage({k:"draw",i:S.indexOf(s),t,w:W,h:H,d:s.dur})}
     else if(n-pend>1500){S.forEach(x=>{if(x.ai==="ok")x.ai="bad"});wk.terminate();wk=null}
   }
   g.globalAlpha=A;
   if(s.bmp)g.drawImage(s.bmp,0,0);
 }
 function hero(s,t){
-  if(s.ai==="ok"&&!s.img){aiHero(s,t);return}
+  if(s.ai==="ok"&&!s.img){aiHero(s,t);return 1}
   const cx=W/2,cy=320,p=ease(t/.6);
   g.save();
   for(let i=0;i<3;i++){const u=(t*.35+i/3)%1;g.globalAlpha=A*(1-u)*.35;g.strokeStyle=AM;g.lineWidth=4;g.beginPath();g.arc(cx,cy,120+u*190,0,7);g.stroke()}
@@ -264,7 +278,7 @@ function frame(Tm){
   const gl=g.createRadialGradient(W/2+Math.sin(Tm*.5)*140,H*.3,20,W/2,H*.3,560);
   gl.addColorStop(0,"rgba(255,179,71,.14)");gl.addColorStop(1,"rgba(255,179,71,0)");
   g.fillStyle=gl;g.fillRect(0,0,W,H);
-  A=ease(t/.35);g.globalAlpha=A;hero(s,t);T[s.jenis](s,t);
+  A=ease(t/.35);g.globalAlpha=A;if(!hero(s,t))T[s.jenis](s,t);
   A=1;g.globalAlpha=1;if($("subon").checked)sub(s,t);
   g.fillStyle=AM;g.fillRect(0,0,W*Tm/TOT,8);
 }
@@ -300,14 +314,19 @@ $("buat").onclick=async()=>{
     const ac=new(window.AudioContext||window.webkitAudioContext)();await ac.resume();
     let buf=null,total=n/14+.8;
     if(!bisu){st("Membuat suara…");buf=await ac.decodeAudioData(await suara());total=buf.duration+.8}
+    siap(total);
     if($("aiv").checked&&getKey()){
-      const need=S.map((s,i)=>({i,s})).filter(x=>!x.s.code||x.s.cn!==x.s.narasi.trim());
+      const need=S.map((s,i)=>({i,s})).filter(x=>!x.s.code||x.s.cn!==ckey(x.s));
       if(need.length){
         st("Membuat visual dengan AI…");
         try{
-          const c=await genKode(need.map(x=>({i:x.i,narasi:x.s.narasi.trim(),layar:x.s.layar})));
-          need.forEach(x=>{if(c[x.i]){x.s.code=c[x.i];x.s.cn=x.s.narasi.trim()}});
-        }catch(e){st("Visual AI gagal ("+e.message+"). Memakai gambar bawaan.");await new Promise(r=>setTimeout(r,1500))}
+          const parts=[];for(let q=0;q<need.length;q+=3)parts.push(need.slice(q,q+3));
+          const rs=await Promise.allSettled(parts.map(pt=>genKode(pt.map(x=>spay(x.i,x.s)))));
+          let gagal="";
+          rs.forEach((r,pi)=>{if(r.status==="fulfilled")parts[pi].forEach(x=>{if(r.value[x.i]){x.s.code=r.value[x.i];x.s.cn=ckey(x.s)}});else gagal=r.reason.message});
+          if(gagal)throw new Error(gagal);
+          
+        }catch(e){st("Sebagian visual AI gagal ("+e.message+"). Memakai gambar bawaan.");await new Promise(r=>setTimeout(r,1500))}
       }
       await kirimKode();
     }else S.forEach(s=>{s.ai=""});
